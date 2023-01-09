@@ -4,9 +4,10 @@ local Fusion = require(Plugin:FindFirstChild("Fusion", true))
 local StudioComponents = script.Parent.Parent
 local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
 
-local getState = require(StudioComponentsUtil.getState)
 local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
 local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
 local unwrap = require(StudioComponentsUtil.unwrap)
 
 local dropdownConstants = require(script.Parent.Constants)
@@ -25,8 +26,8 @@ local COMPONENT_ONLY_PROPERTIES = {
 }
 
 type DropdownItemProperties = {
-	OnSelected: ((item: string) -> nil),
-	Item: string,
+	OnSelected: ((selectedOption: any) -> nil),
+	Item: any,
 	[any]: any,
 }
 
@@ -34,16 +35,10 @@ return function(props: DropdownItemProperties): TextButton
 	local isEnabled = getState(props.Enabled, true)
 	local isHovering = Value(false)
 
-	local modifier = Computed(function()
-		local isHovering = unwrap(isHovering)
-		local isEnabled = unwrap(isEnabled)
-		if not isEnabled then
-			return Enum.StudioStyleGuideModifier.Disabled
-		elseif isHovering then
-			return Enum.StudioStyleGuideModifier.Hover
-		end
-		return Enum.StudioStyleGuideModifier.Default
-	end)
+	local modifier = getModifier({
+		Enabled = isEnabled,
+		Hovering = isHovering,
+	})
 	
 	local newDropdownItem = New "TextButton" {
 		AutoButtonColor = false,
@@ -52,7 +47,7 @@ return function(props: DropdownItemProperties): TextButton
 		BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.EmulatorBar, modifier),
 		BorderSizePixel = 0,
 		Font = themeProvider:GetFont("Default"),
-		Text = props.Item,
+		Text = tostring(props.Item),
 		TextSize = constants.TextSize,
 		TextColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.MainText, modifier),
 		TextXAlignment = Enum.TextXAlignment.Left,

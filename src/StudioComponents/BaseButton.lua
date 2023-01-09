@@ -9,12 +9,14 @@ local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
 
 local BoxBorder = require(StudioComponents.BoxBorder)
 
-local getState = require(StudioComponentsUtil.getState)
+local getMotionState = require(StudioComponentsUtil.getMotionState)
 local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
 local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
 local unwrap = require(StudioComponentsUtil.unwrap)
 local types = require(StudioComponentsUtil.types)
-local stripProps = require(StudioComponentsUtil.stripProps)
 
 local New = Fusion.New
 local Value = Fusion.Value
@@ -22,7 +24,6 @@ local Children = Fusion.Children
 local Computed = Fusion.Computed
 local OnEvent = Fusion.OnEvent
 local Hydrate = Fusion.Hydrate
-local Spring = Fusion.Spring
 
 local COMPONENT_ONLY_PROPERTIES = {
 	"TextColorStyle",
@@ -48,25 +49,15 @@ return function(props: BaseButtonProperties): TextButton
 	local isHovering = Value(false)
 	local isPressed = Value(false)
 
-	local modifier = Computed(function()
-		local isSelected = unwrap(props.Selected)
-		local isDisabled = not unwrap(isEnabled)
-		local isHovering = unwrap(isHovering)
-		local isPressed = unwrap(isPressed)
-		if isDisabled then
-			return Enum.StudioStyleGuideModifier.Disabled
-		elseif isSelected then
-			return Enum.StudioStyleGuideModifier.Selected
-		elseif isPressed then
-			return Enum.StudioStyleGuideModifier.Pressed
-		elseif isHovering then
-			return Enum.StudioStyleGuideModifier.Hover
-		end
-		return Enum.StudioStyleGuideModifier.Default
-	end)
+	local modifier = getModifier({
+		Enabled = isEnabled,
+		Selected = props.Selected,
+		Pressed = isPressed,
+		Hovering = isHovering,
+	})
 
 	local newBaseButton = BoxBorder {
-		Color = Spring(themeProvider:GetColor(props.BorderColorStyle or Enum.StudioStyleGuideColor.CheckedFieldBorder, modifier), 40),
+		Color = getMotionState(themeProvider:GetColor(props.BorderColorStyle or Enum.StudioStyleGuideColor.CheckedFieldBorder, modifier), "Spring", 40),
 
 		[Children] = New "TextButton" {
 			Name = "BaseButton",
@@ -74,8 +65,8 @@ return function(props: BaseButtonProperties): TextButton
 			Text = "Button",
 			Font = themeProvider:GetFont("Default"),
 			TextSize = constants.TextSize,
-			TextColor3 = Spring(themeProvider:GetColor(props.TextColorStyle or Enum.StudioStyleGuideColor.ButtonText, modifier), 40),
-			BackgroundColor3 = Spring(themeProvider:GetColor(props.BackgroundColorStyle or Enum.StudioStyleGuideColor.Button, modifier), 40),
+			TextColor3 = getMotionState(themeProvider:GetColor(props.TextColorStyle or Enum.StudioStyleGuideColor.ButtonText, modifier), "Spring", 40),
+			BackgroundColor3 = getMotionState(themeProvider:GetColor(props.BackgroundColorStyle or Enum.StudioStyleGuideColor.Button, modifier), "Spring", 40),
 			AutoButtonColor = false,
 
 			[OnEvent "InputBegan"] = function(inputObject)

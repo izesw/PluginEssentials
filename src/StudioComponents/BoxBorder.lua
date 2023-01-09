@@ -17,8 +17,9 @@ local OnChange = Fusion.OnChange
 local Hydrate = Fusion.Hydrate
 
 type BoxBorderProperties = {
-	Color: (Color3 | types.StateObject<Color3>)?,
-	Thickness: (number | types.StateObject<number>)?,
+	Color: types.CanBeState<Color3>?,
+	Thickness: types.CanBeState<number>?,
+	CornerRadius: types.CanBeState<UDim>?,
 	[types.Children]: GuiObject,
 }
 
@@ -28,7 +29,7 @@ return function(props: BoxBorderProperties): GuiObject
 	local boxProps = props or {}
 	local borderColor = boxProps.Color or themeProvider:GetColor(Enum.StudioStyleGuideColor.Border)
 	
-	local hyrdateProps = {
+	local hydrateProps = {
 		BorderColor3 = borderColor,
 		BorderMode = Enum.BorderMode.Inset,
 		BorderSizePixel = Computed(function()
@@ -41,10 +42,10 @@ return function(props: BoxBorderProperties): GuiObject
 	if unwrap(constants.CurvedBoxes) then
 		local backgroundTransparency = Value(props[Children].BackgroundTransparency)
 		
-		hyrdateProps = {
+		hydrateProps = {
 			[Children] = {
 				New "UICorner" {
-					CornerRadius = constants.CornerRadius
+					CornerRadius = boxProps.CornerRadius or constants.CornerRadius
 				},
 				
 				New "UIStroke" {
@@ -61,5 +62,5 @@ return function(props: BoxBorderProperties): GuiObject
 		}
 	end
 	
-	return Hydrate(props[Children])(hyrdateProps)
+	return Hydrate(props[Children])(hydrateProps)
 end
