@@ -1,0 +1,4026 @@
+<roblox version="4">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <Color3 name="Ambient">
+        <R>0</R>
+        <G>0</G>
+        <B>0</B>
+      </Color3>
+      <float name="Brightness">2</float>
+      <bool name="GlobalShadows">true</bool>
+      <bool name="Outlines">false</bool>
+      <token name="Technology">1</token>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="1">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="2">
+      <Properties>
+        <string name="Name">Common</string>
+      </Properties>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">Hello</string>
+          <string name="Source">return function()
+	print("Hello, world!")
+end</string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="4">
+        <Properties>
+          <string name="Name">PluginComponents</string>
+        </Properties>
+        <Item class="ModuleScript" referent="5">
+          <Properties>
+            <string name="Name">Toolbar</string>
+            <string name="Source"><![CDATA[local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local Hydrate = Fusion.Hydrate
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Name",
+}
+
+type ToolbarProperties = {
+	Name: string,
+	[any]: any,
+}
+
+return function(props: ToolbarProperties): PluginToolbar
+	local newToolbar = Plugin:CreateToolbar(props.Name)
+
+	local hydrateProps = table.clone(props)
+	for _,propertyName in pairs(COMPONENT_ONLY_PROPERTIES) do
+		hydrateProps[propertyName] = nil
+	end
+
+	return Hydrate(newToolbar)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="6">
+          <Properties>
+            <string name="Name">ToolbarButton</string>
+            <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local PluginComponents = script.Parent
+local StudioComponents = PluginComponents.Parent:FindFirstChild("StudioComponents")
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Observer = Fusion.Observer
+local Hydrate = Fusion.Hydrate
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"ToolTip",
+	"Name",
+	"Image",
+	"Toolbar",
+	"Active",
+}
+
+type ToolbarProperties = {
+	Active: types.CanBeState&lt;boolean>?,
+	Toolbar: PluginToolbar,
+	ToolTip: string,
+	Image: string,
+	Name: string,
+	[any]: any,
+}
+
+return function(props: ToolbarProperties)
+	local toolbarButton = props.Toolbar:CreateButton(
+		props.Name,
+		props.ToolTip,
+		props.Image
+	)
+
+	if props.Active~=nil then
+		toolbarButton:SetActive(unwrap(props.Active))
+		if unwrap(props.Active)~=props.Active then
+			Plugin.Unloading:Connect(Observer(props.Active):onChange(function()
+				toolbarButton:SetActive(unwrap(props.Active, false))
+			end))
+		end
+	end
+
+	local hydrateProps = table.clone(props)
+	for _,propertyName in pairs(COMPONENT_ONLY_PROPERTIES) do
+		hydrateProps[propertyName] = nil
+	end
+
+	return Hydrate(toolbarButton)(hydrateProps)
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="7">
+          <Properties>
+            <string name="Name">Widget</string>
+            <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local Hydrate = Fusion.Hydrate
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Id",
+	"InitialDockTo",
+	"InitialEnabled",
+	"ForceInitialEnabled",
+	"FloatingSize",
+	"MinimumSize",
+	"Plugin"
+}
+
+type PluginGuiProperties = {
+	Id: string,
+	Name: string,
+	InitialDockTo: string | Enum.InitialDockState,
+	InitialEnabled: boolean,
+	ForceInitialEnabled: boolean,
+	FloatingSize: Vector2,
+	MinimumSize: Vector2,
+	[any]: any,
+}
+
+return function(props: PluginGuiProperties)	
+	local newWidget = Plugin:CreateDockWidgetPluginGui(
+		props.Id, 
+		DockWidgetPluginGuiInfo.new(
+			if typeof(props.InitialDockTo) == "string" then Enum.InitialDockState[props.InitialDockTo] else props.InitialDockTo,
+			props.InitialEnabled,
+			props.ForceInitialEnabled,
+			props.FloatingSize.X, props.FloatingSize.Y,
+			props.MinimumSize.X, props.MinimumSize.Y
+		)
+	)
+
+	for _,propertyName in pairs(COMPONENT_ONLY_PROPERTIES) do
+		props[propertyName] = nil
+	end
+
+	props.Title = props.Name
+	
+	if typeof(props.Enabled)=="table" and props.Enabled.kind=="Value" then
+		props.Enabled:set(newWidget.Enabled)
+	end
+
+	return Hydrate(newWidget)(props)
+end</string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="8">
+        <Properties>
+          <string name="Name">StudioComponents</string>
+        </Properties>
+        <Item class="ModuleScript" referent="9">
+          <Properties>
+            <string name="Name">Background</string>
+            <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local types = require(StudioComponentsUtil.types)
+
+local New = Fusion.New
+local Hydrate = Fusion.Hydrate
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"StudioStyleGuideColor",
+	"StudioStyleGuideModifier"
+}
+
+type BackgroundProperties = {
+	StudioStyleGuideColor: types.CanBeState&lt;Enum.StudioStyleGuideColor>?,
+	StudioStyleGuideModifier: types.CanBeState&lt;Enum.StudioStyleGuideModifier>?,
+	[any]: any,
+}
+
+return function(props: BackgroundProperties): Frame
+	return Hydrate(New "Frame" {
+		Size = UDim2.fromScale(1, 1),
+		Position = UDim2.fromScale(0, 0),
+		AnchorPoint = Vector2.new(0, 0),
+		LayoutOrder = 0,
+		ZIndex = 1,
+		BorderSizePixel = 0,
+		BackgroundColor3 = themeProvider:GetColor(
+			props.StudioStyleGuideColor or Enum.StudioStyleGuideColor.MainBackground, 
+			props.StudioStyleGuideModifier
+		),
+	})(stripProps(props, COMPONENT_ONLY_PROPERTIES))
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="10">
+          <Properties>
+            <string name="Name">BaseButton</string>
+            <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local New = Fusion.New
+local Value = Fusion.Value
+local Children = Fusion.Children
+local Computed = Fusion.Computed
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"TextColorStyle",
+	"BackgroundColorStyle",
+	"BorderColorStyle",
+	"Activated",
+	"Enabled",
+}
+
+type styleGuideColorInput = (Enum.StudioStyleGuideColor | types.StateObject&lt;Enum.StudioStyleGuideColor>)?
+
+export type BaseButtonProperties = {
+	Activated: (() -> nil)?,
+	Enabled: (boolean | types.StateObject&lt;boolean>)?,
+	TextColorStyle: styleGuideColorInput,
+	BackgroundColorStyle: styleGuideColorInput,
+	BorderColorStyle: styleGuideColorInput,
+	[any]: any,
+}
+
+return function(props: BaseButtonProperties): TextButton
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+	local isPressed = Value(false)
+
+	local modifier = getModifier({
+		Enabled = isEnabled,
+		Selected = props.Selected,
+		Pressed = isPressed,
+		Hovering = isHovering,
+	})
+
+	local newBaseButton = BoxBorder {
+		Color = getMotionState(themeProvider:GetColor(props.BorderColorStyle or Enum.StudioStyleGuideColor.CheckedFieldBorder, modifier), "Spring", 40),
+
+		[Children] = New "TextButton" {
+			Name = "BaseButton",
+			Size = UDim2.fromScale(1, 1),
+			Text = "Button",
+			Font = themeProvider:GetFont("Default"),
+			TextSize = constants.TextSize,
+			TextColor3 = getMotionState(themeProvider:GetColor(props.TextColorStyle or Enum.StudioStyleGuideColor.ButtonText, modifier), "Spring", 40),
+			BackgroundColor3 = getMotionState(themeProvider:GetColor(props.BackgroundColorStyle or Enum.StudioStyleGuideColor.Button, modifier), "Spring", 40),
+			AutoButtonColor = false,
+
+			[OnEvent "InputBegan"] = function(inputObject)
+				if not unwrap(isEnabled) then
+					return
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+					isHovering:set(true)
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+					isPressed:set(true)
+				end
+			end,
+			[OnEvent "InputEnded"] = function(inputObject)
+				if not unwrap(isEnabled) then
+					return
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+					isHovering:set(false)
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+					isPressed:set(false)
+				end
+			end,
+			[OnEvent "Activated"] = (function()
+				if props.Activated then
+					return function()
+						if unwrap(isEnabled, false) then
+							props.Activated()
+						end
+					end
+				end
+			end)(),
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newBaseButton)(hydrateProps)
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="11">
+          <Properties>
+            <string name="Name">BaseScrollFrame</string>
+            <string name="Source">-- Written by @boatbomber
+-- Modified by @mvyasu
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local Background = require(StudioComponents.Background)
+
+local stripProps = require(StudioComponentsUtil.stripProps)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local ScrollBar = require(script.ScrollBar)
+local Children = Fusion.Children
+local OnChange = Fusion.OnChange
+local Computed = Fusion.Computed
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+local Ref = Fusion.Ref
+local Out = Fusion.Out
+
+local DEFAULT_SCROLL_BAR_THICKNESS = 18
+local COMPONENT_ONLY_PROPERTIES = {
+	"ScrollingEnabled",
+	"VerticalScrollBarPosition",
+	"VerticalScrollBarInset",
+	"ScrollBarThickness",
+	"ScrollBarBorderMode",
+	"CanvasSize",
+	Children,
+}
+
+export type BaseScrollFrameProperties = {
+	ScrollBarBorderMode:  types.CanBeState&lt;Enum.BorderMode>?,
+	CanvasSize: types.CanBeState&lt;UDim2>?,
+	ScrollingEnabled: types.CanBeState&lt;boolean>?,
+	ScrollBarThickness: types.CanBeState&lt;number>?,
+	VerticalScrollBarPosition: types.CanBeState&lt;Enum.VerticalScrollBarPosition>?,
+	VerticalScrollBarInset: types.CanBeState&lt;Enum.ScrollBarInset>?,
+	[any]: any,
+}
+
+return function(props: BaseScrollFrameProperties): Frame
+	local isEnabled = getState(props.ScrollingEnabled, true)
+	local vertPos = getState(props.VerticalScrollBarPosition, Enum.VerticalScrollBarPosition.Right)
+	local vertInset = getState(props.VerticalScrollBarInset, Enum.ScrollBarInset.ScrollBar)
+	
+	local barVisibility = {
+		Vertical = Value(false),
+		Horizontal = Value(false),
+	}
+	
+	local scrollBarThickness = Value(unwrap(props.ScrollBarThickness) or DEFAULT_SCROLL_BAR_THICKNESS)
+	
+	local canvasPosition = Value(Vector2.zero)
+	local absCanvasSize = Value(Vector2.zero)
+	local windowSize = Value(Vector2.zero)
+	local absSize = Value(Vector2.zero)
+
+	local scrollFrame = Value(nil)
+	local function computeShowBar()
+		local scrollFrame = unwrap(scrollFrame)
+		if scrollFrame==nil then
+			barVisibility.Vertical:set(false)
+			barVisibility.Horizontal:set(false)
+			return
+		end
+		
+		--apparently there's decimals included with these sizes
+		--so we need to round the sizes to the nearest pixel so
+		--the scrollbar padding/inset matches what is visually shown
+		local windowSize = scrollFrame.AbsoluteWindowSize
+		local canvasSize = scrollFrame.AbsoluteCanvasSize
+		barVisibility.Vertical:set(math.round(windowSize.Y) &lt; math.round(canvasSize.Y))
+		barVisibility.Horizontal:set(math.round(windowSize.X) &lt; math.round(canvasSize.X))
+	end
+
+	local zIndex = props.ZIndex or 1
+	local childZIndex = Computed(function()
+		return unwrap(zIndex) + 10
+	end)
+
+	local containerFrame = Background {
+		Name = "BaseScrollFrame",
+
+		[Children] = {
+			ScrollBar {
+				ZIndex = childZIndex,
+				
+				IsVertical = true,
+				BorderMode = props.ScrollBarBorderMode,
+				BarVisibility = barVisibility,
+				VerticalScrollBarPosition = vertPos,
+				CanvasPosition = canvasPosition,
+				AbsoluteCanvasSize = absCanvasSize,
+				AbsoluteSize = absSize,
+				WindowSize = windowSize,
+				ScrollBarThickness = scrollBarThickness,
+			},
+			ScrollBar {
+				ZIndex = childZIndex,
+				
+				IsVertical = false,
+				BorderMode = props.ScrollBarBorderMode,
+				BarVisibility = barVisibility,
+				VerticalScrollBarPosition = vertPos,
+				CanvasPosition = canvasPosition,
+				AbsoluteCanvasSize = absCanvasSize,
+				AbsoluteSize = absSize,
+				WindowSize = windowSize,
+				ScrollBarThickness = scrollBarThickness,
+			},
+			New "ScrollingFrame" {
+				[Ref] = scrollFrame,
+
+				Name = "Canvas",
+				Size = UDim2.fromScale(1, 1),
+				BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+				TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+				MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+				ScrollingEnabled = isEnabled,
+				ScrollBarThickness = props.ScrollBarThickness or DEFAULT_SCROLL_BAR_THICKNESS,
+				VerticalScrollBarPosition = vertPos,
+				HorizontalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+				VerticalScrollBarInset = vertInset,
+				ScrollBarImageTransparency = 1,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				
+				ZIndex = zIndex,
+				
+				CanvasSize = props.CanvasSize,
+
+				CanvasPosition = canvasPosition,
+				[Out "CanvasPosition"] = canvasPosition,
+				[Out "AbsoluteCanvasSize"] = absCanvasSize,
+				[Out "AbsoluteWindowSize"] = windowSize,
+				[Out "AbsoluteSize"] = absSize,
+				[Out "ScrollBarThickness"] = scrollBarThickness,
+				
+				[OnChange "AbsoluteWindowSize"] = computeShowBar,
+				[OnChange "AbsoluteCanvasSize"] = computeShowBar,
+
+				[Children] = {
+					props[Children],
+				}
+			}
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(containerFrame)(hydrateProps)
+end</string>
+          </Properties>
+          <Item class="ModuleScript" referent="12">
+            <Properties>
+              <string name="Name">ScrollArrow</string>
+              <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Cleanup = Fusion.Cleanup
+local Value = Fusion.Value
+local New = Fusion.New
+
+local DEFAULT_ARROW_SIZE = UDim2.fromOffset(12, 12)
+local DEFAULT_ARROW_IMAGE = "rbxassetid://6677623152"
+local DEFAULT_ARROW_RECT_SIZE = 16
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Enabled",
+	"Activated",
+	"Direction",
+	"ZIndex",
+}
+
+type ScrollArrowProperties = {
+	Enabled: types.CanBeState&lt;boolean>?,
+	Direction: types.CanBeState&lt;string>,
+	Activated: () -> nil,
+	[any]: any,
+}
+
+local function getBaseProperties(mainModifier: types.CanBeState&lt;Enum.StudioStyleGuideModifier>, props: ScrollArrowProperties)
+	return {
+		Size = DEFAULT_ARROW_SIZE,
+		Image = DEFAULT_ARROW_IMAGE,
+		ImageRectSize = Vector2.new(DEFAULT_ARROW_RECT_SIZE, DEFAULT_ARROW_RECT_SIZE),
+		ScaleType = Enum.ScaleType.Fit,
+		
+		ImageColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.TitlebarText, mainModifier),
+		BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.ScrollBar, mainModifier),
+		BorderColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.Border, mainModifier),
+		
+		AnchorPoint = Computed(function()
+			local currentDirection = unwrap(props.Direction)
+			if currentDirection=="Down" then
+				return Vector2.new(0, 1)
+			elseif currentDirection=="Right" then
+				return Vector2.new(1, 0)
+			end
+			return Vector2.new(0, 0)
+		end),
+		
+		Position = Computed(function()
+			local currentDirection = unwrap(props.Direction)
+			if currentDirection=="Down" then
+				return UDim2.fromScale(0, 1)
+			elseif currentDirection=="Right" then
+				return UDim2.fromScale(1, 0)
+			end
+			return UDim2.fromScale(0, 0)
+		end),
+		
+		ImageRectOffset = Computed(function()
+			local currentDirection = unwrap(props.Direction)
+			if currentDirection=="Down" then
+				return Vector2.new(0, DEFAULT_ARROW_RECT_SIZE)
+			elseif currentDirection=="Left" then
+				return Vector2.new(DEFAULT_ARROW_RECT_SIZE, 0)
+			elseif currentDirection=="Right" then
+				return Vector2.new(DEFAULT_ARROW_RECT_SIZE, DEFAULT_ARROW_RECT_SIZE)
+			end
+			return  Vector2.new(0, 0)
+		end),
+	}
+end
+
+return function(props: ScrollArrowProperties): ImageButton
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+	local isPressed = Value(false)
+	
+	-- no need for hover to be taken into account
+	local arrowModifier = getModifier({
+		Enabled = isEnabled,
+		Pressed = isPressed,
+	})
+	
+	local hearbeatConnection = nil
+	local function disconnectHearbeat()	
+		if hearbeatConnection then
+			hearbeatConnection:Disconnect()
+			hearbeatConnection = nil
+		end
+	end
+	
+	local function listenToHearbeat()
+		if hearbeatConnection then
+			return
+		end
+		if props.Activated then
+			local nextAt = os.clock() + 0.35
+			hearbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
+				local now = os.clock()
+				if now >= nextAt then
+					if unwrap(isHovering, false) then
+						props.Activated()
+					end
+					nextAt += 0.05
+				end
+			end)
+		end
+	end
+
+	local zIndex = Computed(function()
+		return unwrap(props.ZIndex) or 2
+	end)
+
+	local newScrollArrow = New "ImageButton" {
+		AutoButtonColor = false,
+		ZIndex = zIndex,
+		
+		[Cleanup] = disconnectHearbeat,
+		
+		Active = Computed(function()
+			local isEnabled = unwrap(isEnabled)
+			if not isEnabled then
+				disconnectHearbeat()
+			end
+			return isEnabled
+		end),
+		
+		[OnEvent "InputBegan"] = function(inputObject)
+			if not unwrap(isEnabled) then
+				return
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				isHovering:set(true)
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+				isPressed:set(true)
+				if props.Activated then
+					props.Activated()
+				end
+				listenToHearbeat()
+			end
+		end,
+		
+		[OnEvent "InputEnded"] = function(inputObject)
+			if not unwrap(isEnabled) then
+				return
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				isHovering:set(false)
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+				isPressed:set(false)
+				disconnectHearbeat()
+			end
+		end,
+	}
+	
+	for index, value in pairs(getBaseProperties(arrowModifier, props)) do
+		if props[index]==nil then
+			props[index] = value
+		end
+	end
+
+	return Hydrate(newScrollArrow)(stripProps(props, COMPONENT_ONLY_PROPERTIES))
+end</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="13">
+            <Properties>
+              <string name="Name">ScrollBar</string>
+              <string name="Source">-- Writen by @boatbomber
+-- Modified by @mvyasu
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local ScrollArrow = require(script.Parent.ScrollArrow)
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"VerticalScrollBarPosition",
+	"ScrollBarThickness",
+	"CanvasPosition",
+	"AbsoluteCanvasSize",
+	"BarVisibility",
+	"AbsoluteSize",
+	"WindowSize",
+	"IsVertical",
+	"BorderMode",
+}
+
+type ScrollBarProperties = {
+	VerticalScrollBarPosition: types.CanBeState&lt;Enum.VerticalScrollBarPosition>?,
+	BorderMode: types.CanBeState&lt;Enum.BorderMode>?,
+	CanvasPosition: types.CanBeState&lt;UDim2>,
+	AbsoluteSize: types.CanBeState&lt;Vector2>,
+	AbsoluteCanvasSize: types.CanBeState&lt;Vector2>,
+	WindowSize: types.CanBeState&lt;Vector2>,
+	ScrollBarThickness: types.CanBeState&lt;number>,
+	BarVisibility: {
+		Horizontal: types.CanBeState&lt;boolean>,
+		Vertical: types.CanBeState&lt;boolean>,
+	},
+	IsVertical: boolean,
+	[any]: any,
+}
+
+return function(props: ScrollBarProperties): ImageButton	
+	local scrollBarThickness = props.ScrollBarThickness
+	local absoluteCanvasSize = props.AbsoluteCanvasSize
+	local canvasPosition = props.CanvasPosition
+	local windowSize = props.WindowSize
+	
+	local isHoveringHandle = Value(false)
+	local isPressingHandle = Value(false)
+	
+	local frameBorderMode = props.BorderMode or Enum.BorderMode.Inset
+	local childborderMode = Enum.BorderMode.Outline
+	local borderSize = 1
+	
+	local scrollBarOffset = Computed(function()
+		local allVisible = true
+		for _,visibleState in pairs(props.BarVisibility) do
+			if not unwrap(visibleState) then
+				allVisible = false
+				break
+			end
+		end
+		local isInsetBorder = unwrap(frameBorderMode)==Enum.BorderMode.Inset
+		return if allVisible then -(unwrap(scrollBarThickness) or 0) + (if isInsetBorder then borderSize else 0) else 0
+	end)
+
+	local scrollBarHandleOffset = Computed(function()
+		local offsetSize = unwrap(scrollBarOffset)
+		local size = (unwrap(props.AbsoluteSize) or Vector2.zero) + (Vector2.one * (unwrap(scrollBarOffset) or Vector2.zero))
+		local scrollbarThickness = unwrap(scrollBarThickness) or 0
+		local isInsetBorder = unwrap(frameBorderMode)==Enum.BorderMode.Inset
+		return (2*scrollbarThickness+(if isInsetBorder then -borderSize*2 else 0))/(if props.IsVertical then size.Y else size.X)
+	end)
+	
+	return Hydrate(New "Frame" {
+		Name = (if props.IsVertical then "Vertical" else "Horizontal").."ScrollBar",
+		BorderMode = frameBorderMode,
+		BorderSizePixel = borderSize,
+		
+		Visible = Computed(function()
+			return unwrap(if props.IsVertical then props.BarVisibility.Vertical else props.BarVisibility.Horizontal)
+		end),
+		
+		BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+		BorderColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.Border),
+		
+		AnchorPoint = if props.IsVertical then Computed(function()
+			local vert = unwrap(props.VerticalScrollBarPosition)
+			if vert == Enum.VerticalScrollBarPosition.Right then
+				return Vector2.new(1, 0)
+				else
+				return Vector2.new(0, 0)
+			end
+		end) else Vector2.new(0, 1),
+		
+		Position = if props.IsVertical then Computed(function()
+			local vert = unwrap(props.VerticalScrollBarPosition)
+			if vert == Enum.VerticalScrollBarPosition.Right then
+				return UDim2.fromScale(1, 0)
+				else
+				return UDim2.fromScale(0, 0)
+			end
+		end) else Computed(function()
+			local vert = unwrap(props.VerticalScrollBarPosition)
+			return UDim2.fromScale(if vert==Enum.VerticalScrollBarPosition.Left then 1 else 0, 1)
+		end),
+		
+		Size = if props.IsVertical then Computed(function()
+			return UDim2.new(0, unwrap(scrollBarThickness), 1, unwrap(scrollBarOffset))
+		end) else Computed(function()
+			local scrollBarThickness = unwrap(scrollBarThickness)
+			return  UDim2.new(1, unwrap(scrollBarOffset), 0, scrollBarThickness)
+		end),
+
+		[Children] = {
+			(function()
+				local scrollArrows = {}
+				for _,direction in pairs(if props.IsVertical then {"Up", "Down"} else {"Left", "Right"}) do
+					table.insert(scrollArrows, ScrollArrow {
+						Name = direction.."Arrow",
+						BorderMode = childborderMode,
+						BorderSizePixel = borderSize,
+						ZIndex = props.ZIndex,
+						Direction = direction,
+						Size = UDim2.fromScale(1, 1),
+						SizeConstraint = if props.IsVertical then Enum.SizeConstraint.RelativeXX else Enum.SizeConstraint.RelativeYY,
+						Activated = (function()
+							if direction=="Up" or direction=="Left" then
+								return function()
+									local p = unwrap(canvasPosition) or Vector2.zero
+									canvasPosition:set(Vector2.new(
+										if props.IsVertical then p.X else math.clamp(p.X-25, 0, math.huge),
+										if props.IsVertical then math.clamp(p.Y-25, 0, math.huge) else p.Y
+										))
+								end
+							elseif direction=="Down" or direction=="Right" then
+								return function()
+									local p = unwrap(canvasPosition) or Vector2.zero
+									local window = unwrap(windowSize) or Vector2.zero
+									local content = unwrap(absoluteCanvasSize) or Vector2.zero
+									canvasPosition:set(Vector2.new(
+										if props.IsVertical then p.X else math.clamp(p.X+25, 0, content.X-window.X),
+										if props.IsVertical then math.clamp(p.Y+25, 0, content.Y-window.Y) else p.Y
+										))
+								end
+							end
+						end)(),
+					})
+				end
+				return scrollArrows
+			end)(),
+			
+			
+			New "Frame" {
+				Name = "Handle",
+				ZIndex = props.ZIndex,
+				BorderMode = childborderMode,
+				BorderSizePixel = borderSize,
+			
+				BorderColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.Border),
+				
+				BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.ScrollBar, getModifier({
+					Enabled = true,
+					Pressed = Computed(function()
+						return unwrap(isPressingHandle) or unwrap(isHoveringHandle)
+					end),
+				})),
+			
+				Size = Computed(function()
+					local window = unwrap(windowSize) or Vector2.zero
+					local content = unwrap(absoluteCanvasSize) or Vector2.zero
+					local relativeOffset = unwrap(scrollBarHandleOffset)
+				
+					return UDim2.fromScale(
+						if props.IsVertical then 1 else (window.X/content.X) * (1-relativeOffset),
+						if props.IsVertical then (window.Y/content.Y) * (1-relativeOffset) else 1
+					)
+				end),
+			
+				Position = Computed(function()
+					local content = unwrap(absoluteCanvasSize) or Vector2.zero
+					local pos = unwrap(canvasPosition) or Vector2.zero
+					local scrollBarThickness = unwrap(scrollBarThickness) or 0
+				
+					local relativeOffset = unwrap(scrollBarHandleOffset) or 0
+					local relativePos = if props.IsVertical then (pos.Y/content.Y) else (pos.X/content.X)
+				
+					if props.IsVertical then
+						return UDim2.new(
+							0, 0,
+							relativePos * (1-relativeOffset), unwrap(scrollBarThickness)-borderSize
+						)
+					else
+						return UDim2.new(
+							relativePos * (1-relativeOffset), unwrap(scrollBarThickness)-borderSize,
+							0, 0
+						)
+					end
+				end),
+			
+				[OnEvent "InputBegan"] = function(inputObject)
+					if inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+						isHoveringHandle:set(true)
+					elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+						isPressingHandle:set(true)
+					end
+				end,
+
+				[OnEvent "InputEnded"] = function(inputObject)
+					if inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+						isHoveringHandle:set(false)
+					elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+						isPressingHandle:set(false)
+					end
+				end,
+			},
+		}
+	})(stripProps(props, COMPONENT_ONLY_PROPERTIES))
+end</string>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="ModuleScript" referent="14">
+          <Properties>
+            <string name="Name">BoxBorder</string>
+            <string name="Source"><![CDATA[local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local constants = require(StudioComponentsUtil.constants)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local New = Fusion.New
+local Value = Fusion.Value
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local OnChange = Fusion.OnChange
+local Hydrate = Fusion.Hydrate
+
+type BoxBorderProperties = {
+	Color: types.CanBeState<Color3>?,
+	Thickness: types.CanBeState<number>?,
+	CornerRadius: types.CanBeState<UDim>?,
+	[types.Children]: GuiObject,
+}
+
+-- using [Children] to define the GuiObject is meant to give a more consistant format
+
+return function(props: BoxBorderProperties): GuiObject
+	local boxProps = props or {}
+	local borderColor = boxProps.Color or themeProvider:GetColor(Enum.StudioStyleGuideColor.Border)
+	
+	local hydrateProps = {
+		BorderColor3 = borderColor,
+		BorderMode = Enum.BorderMode.Inset,
+		BorderSizePixel = Computed(function()
+			local thickness = unwrap(boxProps.Thickness)
+			local useCurvedBoxes = unwrap(constants.CurvedBoxes)
+			return if useCurvedBoxes then 0 else (thickness or 1)
+		end),
+	}
+	
+	if unwrap(constants.CurvedBoxes) then
+		local backgroundTransparency = Value(props[Children].BackgroundTransparency)
+		
+		hydrateProps = {
+			[Children] = {
+				New "UICorner" {
+					CornerRadius = boxProps.CornerRadius or constants.CornerRadius
+				},
+				
+				New "UIStroke" {
+					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					Color = borderColor,
+					Thickness = boxProps.Thickness or 1,
+					Transparency = backgroundTransparency,
+				}
+			},
+			
+			[OnChange "BackgroundTransparency"] = function(newTransparency)
+				backgroundTransparency:set(newTransparency)
+			end,
+		}
+	end
+	
+	return Hydrate(props[Children])(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="15">
+          <Properties>
+            <string name="Name">Button</string>
+            <string name="Source"><![CDATA[-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BaseButton = require(StudioComponents.BaseButton)
+
+local New = Fusion.New
+local Children = Fusion.Children
+local Hydrate = Fusion.Hydrate
+
+export type ButtonProperties = BaseButton.BaseButtonProperties
+
+return function(props: ButtonProperties): TextButton
+	if not props.Name then
+		props.Name = "Button"
+	end
+
+	local newButton = BaseButton(props)
+	return newButton
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="16">
+          <Properties>
+            <string name="Name">Checkbox</string>
+            <string name="Source"><![CDATA[-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local New = Fusion.New
+local Value = Fusion.Value
+local OnEvent = Fusion.OnEvent
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local Hydrate = Fusion.Hydrate
+
+local INDICATOR_IMAGE = "rbxassetid://6652838434"
+local COMPONENT_ONLY_PROPERTIES = {
+	"OnChange",
+	"Alignment",
+	"Enabled",
+	"Value",
+	"Text",
+}
+
+type CheckboxProperties = {
+	OnChange: ((newValue: boolean) -> nil)?,
+	Alignment: (Enum.HorizontalAlignment | types.StateObject<Enum.HorizontalAlignment>)?,
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	Text: (string | types.StateObject<string>)?,
+	Value: (boolean | types.Value<boolean>)?,
+	[any]: any,
+}
+
+return function(props: CheckboxProperties): Frame
+	local currentValue = getState(props.Value, true)
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+
+	local isIndeterminate = Computed(function()
+		return unwrap(currentValue)==nil
+	end)
+
+	local mainModifier = getModifier({
+		Enabled = isEnabled,
+		Hovering = isHovering,
+	})
+
+	local backModifier = getModifier({
+		Enabled = isEnabled,
+		Selected = currentValue,
+	})
+
+	local checkFieldIndicatorColor = themeProvider:GetColor(Enum.StudioStyleGuideColor.CheckedFieldIndicator, mainModifier)
+
+	local boxHorizontalScale = Computed(function()
+		local currentAlignment = unwrap(props.Alignment) or Enum.HorizontalAlignment.Left
+		return if currentAlignment==Enum.HorizontalAlignment.Right then 1 else 0
+	end)
+
+	local textHorizontalScale = Computed(function()
+		return if unwrap(boxHorizontalScale)==1 then 0 else 1
+	end)
+
+	local newCheckboxFrame = New "Frame" {
+		Name = "Checkbox",
+		Size = UDim2.new(1, 0, 0, 15),
+		BackgroundTransparency = 1,
+
+		[Children] = {
+			New "TextButton" {
+				Text = "",
+				Active = true,
+				Name = "CheckBoxInput",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+
+				[OnEvent "InputBegan"] = function(inputObject)
+					if not unwrap(isEnabled) then
+						return
+					elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+						isHovering:set(true)
+					end
+				end,
+				[OnEvent "InputEnded"] = function(inputObject)
+					if not unwrap(isEnabled) then
+						return
+					elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+						isHovering:set(false)
+					end
+				end,
+				[OnEvent "Activated"] = function()
+					if unwrap(isEnabled) then
+						local newValue = not unwrap(currentValue, false)
+						currentValue:set(newValue)
+						if props.OnChange then
+							props.OnChange(newValue)
+						end
+					end
+				end,
+			},
+			BoxBorder {
+				Color = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.CheckedFieldBorder, mainModifier), "Spring", 40),
+
+				[Children] = New "Frame" {
+					Name = "Box",
+					AnchorPoint = Computed(function()
+						return Vector2.new(unwrap(boxHorizontalScale), 0)
+					end),
+					Position = Computed(function()
+						return UDim2.fromScale(unwrap(boxHorizontalScale), 0)
+					end),
+					BackgroundColor3 = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.CheckedFieldBackground, backModifier), "Spring", 40),
+					Size = UDim2.fromOffset(15, 15),
+
+					[Children] = New "ImageLabel" {
+						AnchorPoint = Vector2.new(.5, .5),
+						Visible = Computed(function()
+							return unwrap(currentValue)~=false
+						end),
+						Name = "Indicator",
+						BackgroundTransparency = 1,
+						Size = UDim2.fromOffset(13, 13),
+						Position = UDim2.fromScale(.5, .5),
+						Image = INDICATOR_IMAGE,
+						ImageColor3 = getMotionState(Computed(function()
+							local indicatorColor = unwrap(checkFieldIndicatorColor)
+							return if unwrap(isIndeterminate) then Color3.fromRGB(255, 255, 255) else indicatorColor
+						end), "Spring", 40),
+						ImageRectOffset = Computed(function()
+							if unwrap(isIndeterminate) then
+								return if unwrap(themeProvider.IsDark) then Vector2.new(13, 0) else Vector2.new(26, 0)
+							end
+							return Vector2.new(0, 0)
+						end),
+						ImageRectSize = Vector2.new(13, 13),
+
+						[Children] = Computed(function()
+							local useCurvedBoxes = unwrap(constants.CurvedBoxes)
+							if useCurvedBoxes then
+								return New "UICorner" {
+									CornerRadius = constants.CornerRadius
+								}
+							end
+						end)
+					}
+				}
+			},
+			Computed(function()
+				if props.Text then
+					return New "TextLabel" {
+						BackgroundTransparency = 1,
+						AnchorPoint = Computed(function()
+							return Vector2.new(unwrap(textHorizontalScale), 0)
+						end),
+						Position = Computed(function()
+							return UDim2.fromScale(unwrap(textHorizontalScale), 0)
+						end),
+						Size = UDim2.new(1, -20, 1, 0),
+						TextXAlignment = Computed(function()
+							return if unwrap(textHorizontalScale)==1 then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right
+						end),
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						Text = props.Text,
+						Font = themeProvider:GetFont("Default"),
+						TextSize = constants.TextSize,
+						TextColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.MainText, mainModifier),
+					}
+				end
+			end)
+		}
+	}
+
+	local hydrateProps = table.clone(props)
+	for _,propertyIndex in pairs(COMPONENT_ONLY_PROPERTIES) do
+		hydrateProps[propertyIndex] = nil
+	end
+
+	return Hydrate(newCheckboxFrame)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="17">
+          <Properties>
+            <string name="Name">ClassIcon</string>
+            <string name="Source"><![CDATA[-- Written by @boatbomber
+
+local StudioService = game:GetService("StudioService")
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local stripProps = require(StudioComponentsUtil.stripProps)
+local types = require(StudioComponentsUtil.types)
+local unwrap = require(StudioComponentsUtil.unwrap)
+
+local New = Fusion.New
+local Hydrate = Fusion.Hydrate
+local Computed = Fusion.Computed
+
+type ClassIconProperties = {
+	ClassName: (string | types.StateObject<string>),
+	[any]: any,
+}
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"ClassName",
+}
+
+return function(props: ClassIconProperties): Frame
+	local image = Computed(function()
+		local class = unwrap(props.ClassName)
+		return StudioService:GetClassIcon(class)
+	end)
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+
+	return Hydrate(New "ImageLabel" {
+		Name = "ClassIcon:"..props.ClassName,
+		Size = UDim2.fromOffset(16, 16),
+		BackgroundTransparency = 1,
+		Image = Computed(function()
+			return unwrap(image).Image
+		end),
+		ImageRectOffset = Computed(function()
+			return unwrap(image).ImageRectOffset
+		end),
+		ImageRectSize = Computed(function()
+			return unwrap(image).ImageRectSize
+		end),
+	})(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="18">
+          <Properties>
+            <string name="Name">ColorPicker</string>
+            <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getDragInput = require(StudioComponentsUtil.getDragInput)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local New = Fusion.New
+local Value = Fusion.Value
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Observer = Fusion.Observer
+local Cleanup = Fusion.Cleanup
+local Ref = Fusion.Ref
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"ZIndex",
+	"Enabled",
+	"OnChange",
+	"ListDisplayMode",
+	"Value",
+	"Step",
+}
+
+type ColorPickerProperties = {
+	ListDisplayMode: (Enum.ListDisplayMode | types.StateObject&lt;Enum.ListDisplayMode>)?,
+	Enabled: (boolean | types.StateObject&lt;boolean>)?,
+	OnChange: (newColor: Color3) -> nil,
+	Value: (Color3 | types.Value&lt;Color3>)?,
+	Step: (Vector2 | types.Value&lt;Vector2>)?,
+	[any]: any,
+}
+
+return function(props: ColorPickerProperties): Frame
+	local listDisplayMode = getState(props.ListDisplayMode, Enum.ListDisplayMode.Horizontal)
+
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+
+	local isHorizontalList = Computed(function()
+		return unwrap(listDisplayMode)==Enum.ListDisplayMode.Horizontal
+	end)
+
+	local regionRef = Value()
+	local sliderRef = Value()
+
+	local currentRegionInput = getDragInput({
+		Enabled = isEnabled,
+		Instance = regionRef,
+		Value = Value(Vector2.new()),
+	})
+
+	local currentSliderInput = getDragInput({
+		Enabled = isEnabled,
+		Instance = sliderRef,
+		Value = Value(Vector2.new()),
+	})
+
+	local inputColor = getState(props.Value, Color3.new(1, 1, 1))
+	local function updateCurrentInput()
+		local hue, sat, val = unwrap(inputColor, false):ToHSV()
+		currentRegionInput:set(Vector2.new(1-hue, 1-sat))
+		currentSliderInput:set(if unwrap(isHorizontalList, false) then Vector2.new(0, 1-val) else Vector2.new(val, 0))
+	end
+
+	updateCurrentInput()
+
+	local currentColor = Computed(function()
+		local regionInput = unwrap(currentRegionInput)
+		local sliderInput = unwrap(currentSliderInput)
+		return Color3.fromHSV(
+			math.max(0.0001, 1 - regionInput.X),
+			math.max(0.0001, 1 - regionInput.Y),
+			math.max(0.0001, 1 - if unwrap(isHorizontalList, false) then sliderInput.Y else 1-sliderInput.X)
+		)
+	end)
+
+	local function roundNumber(number: number)
+		return if (1-number)&lt;.01 or number&lt;.01 then math.round(number) else number
+	end
+
+	local lastUpdatedColor = nil
+	local cleanupInputColorObserver = Observer(inputColor):onChange(updateCurrentInput)
+	local cleanupCurrentColorObserver = Observer(currentColor):onChange(function()
+		local newColor = unwrap(currentColor, false)
+		if props.OnChange then
+			local roundedColor = Color3.new(
+				roundNumber(newColor.R),
+				roundNumber(newColor.G),
+				roundNumber(newColor.B)
+			)
+
+			if lastUpdatedColor~=roundedColor then
+				lastUpdatedColor = roundedColor
+				-- to prevent dependency issues
+				task.spawn(function()
+					-- due to the math.max earlier, I need to round to the nearest whole number just in case
+					props.OnChange(roundedColor)
+				end)
+			end
+		end
+	end)
+
+	local childZIndex = Computed(function()
+		return (unwrap(props.ZIndex) or 0) + 1
+	end)
+
+	local newColorPicker = New "Frame" {
+		Name = "ColorPicker",
+		Size = UDim2.new(1, 0, 0, 150),
+		BackgroundTransparency = 1,
+		[Cleanup] = function()
+			cleanupInputColorObserver()
+			cleanupCurrentColorObserver()
+		end,
+
+		[Children] = {
+			BoxBorder {
+				[Children] = New "TextButton" {
+					Name = "Slider",
+					ZIndex = childZIndex,
+					Active = false,
+					AutoButtonColor = false,
+					Text = "",
+					Size = Computed(function()
+						if unwrap( isHorizontalList) then
+							return UDim2.new(0, 14, 1, 0)
+						end
+						return UDim2.new(1, 0, 0, 14)
+					end),
+					AnchorPoint = Computed(function()
+						if unwrap( isHorizontalList) then
+							return Vector2.new(1, 0)
+						end
+						return Vector2.new(0, 1)
+					end),
+					Position = Computed(function()
+						if unwrap( isHorizontalList) then
+							return UDim2.new(1, -6, 0, 0)
+						end
+						return UDim2.new(0, 0, 1, -6)
+					end),
+					BorderSizePixel = 0,
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+
+					[Ref] = sliderRef,
+
+					[Children] = {
+						New "UIGradient" {
+							Name = "Gradient",
+							Color = Computed(function()
+								local isEnabled = unwrap(isEnabled)
+								local hue, sat, val = unwrap(currentColor):ToHSV()
+								return ColorSequence.new(Color3.fromRGB(0, 0, 0), Color3.fromHSV(hue, sat, if isEnabled then 1 else .5))
+							end),
+							Rotation = Computed(function()
+								if unwrap( isHorizontalList) then
+									return -90
+								end
+								return 0
+							end),
+						},
+						New "ImageLabel" {
+							Name = "Arrow",
+							ZIndex = childZIndex,
+							AnchorPoint = Computed(function()
+								if unwrap( isHorizontalList) then
+									return Vector2.new(0, .5)
+								end
+								return Vector2.new(.5, 0)
+							end),
+							Size = UDim2.fromOffset(5, 9),
+							Rotation = Computed(function()
+								if unwrap( isHorizontalList) then
+									return 0
+								end
+								return 90
+							end),
+							Position = Computed(function()
+								local scale = 1 - select(3, unwrap(currentColor):ToHSV())
+								if unwrap( isHorizontalList) then
+									return UDim2.new(1, 1, scale, 0)
+								end
+								return UDim2.new(1-scale, 0, 1, 1)
+							end),
+							BackgroundTransparency = 1,
+							Image = "rbxassetid://7507468017",
+							ImageColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.TitlebarText),
+						}
+					}
+				}
+			},
+			BoxBorder {
+				[Children] = New "ImageButton" {
+					Name = "Region",
+					ZIndex = childZIndex,
+					Active = false,
+					AutoButtonColor = false,
+					Size = Computed(function()
+						if unwrap( isHorizontalList) then
+							return UDim2.new(1, -30, 1, 0)
+						end
+						return UDim2.new(1, 0, 1, -30)
+					end),
+					Image = "rbxassetid://2752294886",
+					ImageColor3 = Computed(function()
+						return Color3.fromHSV(0, 0, if unwrap(isEnabled) then 1 else .5)
+					end),
+					ClipsDescendants = true,
+					BorderSizePixel = 0,
+					[Ref] = regionRef,
+
+					[Children] = New "Frame" {
+						Name = "Indicator",
+						ZIndex = childZIndex,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = Computed(function()
+							local hue, sat, val = unwrap(currentColor):ToHSV()
+							return UDim2.new(1 - hue, 1, 1 - sat, 0)
+						end),
+						Size = UDim2.fromOffset(19, 19),
+						BackgroundTransparency = 1,
+
+						[Children] = {
+							New "Frame" {
+								Name = "Vertical",
+								ZIndex = childZIndex,
+								Position = UDim2.fromOffset(8, 0),
+								Size = UDim2.new(0, 2, 1, 0),
+								BorderSizePixel = 0,
+								BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+							},
+							New "Frame" {
+								Name = "Horizontal",
+								ZIndex = childZIndex,
+								Position = UDim2.fromOffset(0, 8),
+								Size = UDim2.new(1, 0, 0, 2),
+								BorderSizePixel = 0,
+								BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+							}
+						}
+					}
+				}
+			},
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newColorPicker)(hydrateProps)
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="19">
+          <Properties>
+            <string name="Name">Dropdown</string>
+            <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local ScrollFrame = require(StudioComponents.ScrollFrame)
+local BoxBorder = require(StudioComponents.BoxBorder)
+local DropdownItem = require(script.DropdownItem)
+
+local getSelectedState = require(StudioComponentsUtil.getSelectedState)
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local dropdownConstants = require(script.Constants)
+
+local ForValues = Fusion.ForValues
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local OnChange = Fusion.OnChange
+local Observer = Fusion.Observer
+local Cleanup = Fusion.Cleanup
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Enabled",
+	"MaxVisibleItems",
+	"Options",
+	"Value",
+	"ZIndex",
+	"OnSelected",
+	"Size",
+}
+
+type DropdownProperties = {
+	Enabled: (boolean | types.StateObject&lt;boolean>)?,
+	Value: (any | types.Value&lt;any>)?,
+	Options: {any} | types.StateObject&lt;{any}>,
+	MaxVisibleItems: (number | types.StateObject&lt;number>)?,
+	OnSelected: (selectedOption: any) -> nil,
+	[any]: any,
+}
+
+return function(props: DropdownProperties): Frame
+	local isInputEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+	local isOpen = Value(false)
+	
+	local isEmpty = Computed(function()
+		return next(unwrap(props.Options or {}))==nil
+	end)
+
+	local isEnabled = Computed(function()
+		local isInputEnabled = unwrap(isInputEnabled)
+		local isEmpty = unwrap(isEmpty)
+		return isInputEnabled and not isEmpty
+	end)
+
+	local modifier = getModifier({
+		Enabled = isEnabled,
+		Hovering = isHovering,
+	})
+
+	local backgroundStyleGuideColor = Computed(function()
+		local isHovering = unwrap(isHovering)
+		local isOpen = unwrap(isOpen)
+		if isOpen or isHovering then
+			return Enum.StudioStyleGuideColor.InputFieldBackground
+		end
+		return Enum.StudioStyleGuideColor.MainBackground
+	end)
+	
+	local disconnectGetSelectedState = nil
+	local selectedOption, onSelectedOption do
+		local inputValue = getState(props.Value, nil, "Value")
+		onSelectedOption = function(selectedOption)
+			isOpen:set(false)
+			inputValue:set(selectedOption)
+			if props.OnSelected then
+				props.OnSelected(selectedOption)
+			end
+		end
+		
+		selectedOption = Computed(getSelectedState {
+			Value = inputValue,
+			Options = props.Options,
+			OnSelected = onSelectedOption,
+		})
+		--just in case there's never a dependency for selectedOption
+		--props.OnSelected should always be ran even if there isn't a dependency
+		disconnectGetSelectedState = Observer(selectedOption):onChange(function() end)
+	end
+
+	local spaceBetweenTopAndDropdown = 5
+	local dropdownPadding = UDim.new(0, 2)
+	local dropdownSize = Computed(function()
+		local propsSize = unwrap(props.Size)
+		return propsSize or UDim2.new(1, 0, 0, dropdownConstants.RowHeight)
+	end)
+
+	local absoluteDropdownSize = Value(UDim2.new())
+
+	local dropdownItems = Computed(function()
+		local itemList = {}
+		local dropdownOptionList = unwrap(props.Options)
+		if unwrap(isOpen) then
+			for i, item in ipairs(dropdownOptionList) do
+				itemList[i] = {
+					OnSelected = onSelectedOption,
+					Size = Computed(function()
+						return UDim2.new(1, 0, 0, unwrap(absoluteDropdownSize).Y.Offset)
+					end),
+					LayoutOrder = i,
+					Item = item,
+				}
+			end
+		end
+		return itemList
+	end)
+
+	local maxVisibleRows = Computed(function()
+		return unwrap(props.MaxVisibleItems) or dropdownConstants.MaxVisibleRows
+	end)
+
+	local rowPadding = 1
+	local scrollHeight = Computed(function()
+		local itemSize = unwrap(absoluteDropdownSize)
+		local visibleItems = math.min(unwrap(maxVisibleRows), #unwrap(dropdownItems))
+		return visibleItems * (itemSize.Y.Offset) -- item heights
+			+ (visibleItems - 1) * rowPadding -- row padding
+			+ (dropdownPadding.Offset * 2) -- top and bottom
+	end)
+
+	local zIndex = Computed(function()
+		return unwrap(props.ZIndex) or 5
+	end)
+	
+	local function getOptionName(option)
+		local option = unwrap(option)
+		if typeof(option)=="table" and (option.Label or option.Name or option.Title) then
+			return tostring(option.Label or option.Name or option.Title)
+		elseif typeof(option)=="Instance" or typeof(option)=="EnumItem" then
+			return option.Name
+		end
+		return tostring(option)
+	end
+
+	local newDropdown = New "Frame" {
+		Name = "Dropdown",
+		Size = dropdownSize,
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		
+		[Cleanup] = disconnectGetSelectedState,
+
+		[OnEvent "InputBegan"] = function(inputObject)
+			if not unwrap(isEnabled) then
+				return
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				isHovering:set(true)
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+				isOpen:set(not unwrap(isOpen))
+			end
+		end,
+
+		[OnEvent "InputEnded"] = function(inputObject)
+			if not unwrap(isEnabled) then
+				return
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				isHovering:set(false)
+			end
+		end,
+
+		[OnChange "AbsoluteSize"] = function(newAbsoluteSize)
+			absoluteDropdownSize:set(UDim2.fromOffset(newAbsoluteSize.X, newAbsoluteSize.Y))
+		end, 
+
+		[Children] = {
+			-- this frame hides the dropdown if the mouse leaves it
+			-- maybe this should be done with a mouse click instead
+			-- but I don't know the cleanest way to do that right now
+			New "Frame" {
+				Name = "WholeDropdownInput",
+				BackgroundTransparency = 1,
+
+				Size = Computed(function()
+					local topDropdownSize = unwrap(absoluteDropdownSize, false)
+					local dropdownHeight = unwrap(scrollHeight)
+					if topDropdownSize and dropdownHeight then
+						local dropdownTotalHeight = topDropdownSize.Y.Offset + dropdownHeight + spaceBetweenTopAndDropdown
+						return UDim2.fromOffset(topDropdownSize.X.Offset, dropdownTotalHeight)
+					end
+					return UDim2.new()
+				end),
+
+				[OnEvent "InputEnded"] = function(inputObject)
+					if not unwrap(isOpen) then
+						return
+					elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+						isOpen:set(false)
+					end
+				end,
+			},
+			BoxBorder {
+				Color = themeProvider:GetColor(Enum.StudioStyleGuideColor.CheckedFieldBorder, modifier),
+
+				[Children] = New "TextLabel" {
+					Name = "Selected",
+					Size = UDim2.fromScale(1, 1),
+					TextSize = constants.TextSize,
+					TextXAlignment = Enum.TextXAlignment.Left,
+
+					BackgroundColor3 = getMotionState(themeProvider:GetColor(backgroundStyleGuideColor, modifier), "Spring", 40),
+					TextColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.MainText, modifier),
+					Font = themeProvider:GetFont("Default"),
+					Text = Computed(function()
+						return getOptionName(selectedOption)
+					end),
+
+					[Children] = New "UIPadding" {
+						PaddingLeft = UDim.new(0, dropdownConstants.TextPaddingLeft),
+						PaddingRight = UDim.new(0, dropdownConstants.TextPaddingRight),
+					}
+				}
+			},
+			New "Frame" {
+				Name = "ArrowContainer",
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.new(0, 18, 1, 0),
+				BackgroundTransparency = 1,
+
+				[Children] = New "ImageLabel" {
+					Name = "Arrow",
+					Image = "rbxassetid://7260137654",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.fromOffset(8, 4),
+					BackgroundTransparency = 1,
+					ImageColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.TitlebarText, modifier),
+				}
+			},
+			--Computed(function()
+			--if unwrap(isOpen) then
+			--[[return]] BoxBorder {
+				[Children] = ScrollFrame {
+					ZIndex = zIndex,
+					Name = "Drop",
+					BorderSizePixel = 0,
+					Visible = isOpen,
+					Position = UDim2.new(0, 0, 1, spaceBetweenTopAndDropdown),
+					Size = Computed(function()
+						return UDim2.new(1, 0, 0, unwrap(scrollHeight))
+					end),
+
+					ScrollBarBorderMode = Enum.BorderMode.Outline,
+					CanvasScaleConstraint = Enum.ScrollingDirection.X,
+
+					UILayout = New "UIListLayout" {
+						Padding = UDim.new(0, rowPadding),	
+					},
+
+					UIPadding = New "UIPadding" {
+						PaddingLeft = dropdownPadding,
+						PaddingRight = dropdownPadding,
+						PaddingTop = dropdownPadding,
+						PaddingBottom = dropdownPadding,
+					},
+
+					[Children] = ForValues(dropdownItems, function(props)
+						props.ZIndex = unwrap(zIndex) + 1
+						props.Text = getOptionName(props.Item) 
+						return DropdownItem(props)
+					end),
+				}
+			}
+			--end
+			--return nil
+			--end)
+		},
+	}
+
+	return Hydrate(newDropdown)(stripProps(props, COMPONENT_ONLY_PROPERTIES))
+end</string>
+          </Properties>
+          <Item class="ModuleScript" referent="20">
+            <Properties>
+              <string name="Name">Constants</string>
+              <string name="Source">return {
+	RowHeight = 25,
+	TextPaddingLeft = 5,
+	TextPaddingRight = 3,
+	MaxVisibleRows = 6,
+}</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="21">
+            <Properties>
+              <string name="Name">DropdownItem</string>
+              <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+
+local dropdownConstants = require(script.Parent.Constants)
+
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"OnSelected",
+	"Enabled",
+	"Item"
+}
+
+type DropdownItemProperties = {
+	OnSelected: ((selectedOption: any) -> nil),
+	Item: any,
+	[any]: any,
+}
+
+return function(props: DropdownItemProperties): TextButton
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+
+	local modifier = getModifier({
+		Enabled = isEnabled,
+		Hovering = isHovering,
+	})
+	
+	local newDropdownItem = New "TextButton" {
+		AutoButtonColor = false,
+		Name = "DropdownItem",
+		Size = UDim2.new(1, 0, 0, 15),
+		BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.EmulatorBar, modifier),
+		BorderSizePixel = 0,
+		Font = themeProvider:GetFont("Default"),
+		Text = tostring(props.Item),
+		TextSize = constants.TextSize,
+		TextColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.MainText, modifier),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		
+		[OnEvent "InputBegan"] = function(inputObject)
+			if not unwrap(isEnabled) then
+				return
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				isHovering:set(true)
+			end
+		end,
+		[OnEvent "InputEnded"] = function(inputObject)
+			if not unwrap(isEnabled) then
+				return
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				isHovering:set(false)
+			end
+		end,
+		[OnEvent "Activated"] = function()
+			props.OnSelected(props.Item)
+		end,
+		
+		[Children] = {
+			New "UIPadding" {
+				PaddingLeft = UDim.new(0, dropdownConstants.TextPaddingLeft - 1),
+				PaddingRight = UDim.new(0, dropdownConstants.TextPaddingRight),
+			},
+			Computed(function()
+				if unwrap(constants.CurvedBoxes, false) then
+					return New "UICorner" {
+						CornerRadius = constants.CornerRadius
+					}
+				end
+			end)
+		}
+	}
+	
+	local hydrateProps = table.clone(props)
+	for _,propertyIndex in pairs(COMPONENT_ONLY_PROPERTIES) do
+		hydrateProps[propertyIndex] = nil
+	end
+	
+	return Hydrate(newDropdownItem)(hydrateProps)
+end</string>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="ModuleScript" referent="22">
+          <Properties>
+            <string name="Name">IconButton</string>
+            <string name="Source"><![CDATA[local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local New = Fusion.New
+local Value = Fusion.Value
+local Children = Fusion.Children
+local Computed = Fusion.Computed
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"ImageColorStyle",
+	"BackgroundColorStyle",
+	"BorderColorStyle",
+	"Activated",
+	"Enabled",
+	"Icon",
+}
+
+type styleGuideColorInput = (Enum.StudioStyleGuideColor | types.StateObject<Enum.StudioStyleGuideColor>)?
+
+export type IconButtonProperties = {
+	Activated: (() -> nil)?,
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	TextColorStyle: styleGuideColorInput,
+	BackgroundColorStyle: styleGuideColorInput,
+	BorderColorStyle: styleGuideColorInput,
+	[any]: any,
+}
+
+return function(props: IconButtonProperties): TextButton
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+	local isPressed = Value(false)
+
+	local modifier = getModifier({
+		Enabled = props.Enabled,
+		Selected = props.Selected,
+		Hovering = isHovering,
+		Pressed = isPressed,
+	})
+
+	local newBaseButton = BoxBorder {
+		Color = getMotionState(themeProvider:GetColor(props.BorderColorStyle or Enum.StudioStyleGuideColor.CheckedFieldBorder, modifier), "Spring", 40),
+
+		[Children] = New "TextButton" {
+			Name = "IconButton",
+			Size = UDim2.fromScale(1, 1),
+			Text = "",
+			BackgroundColor3 = getMotionState(themeProvider:GetColor(props.BackgroundColorStyle or Enum.StudioStyleGuideColor.Button, modifier), "Spring", 40),
+			AutoButtonColor = false,
+
+			[OnEvent "InputBegan"] = function(inputObject)
+				if not unwrap(isEnabled) then
+					return
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+					isHovering:set(true)
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+					isPressed:set(true)
+				end
+			end,
+			[OnEvent "InputEnded"] = function(inputObject)
+				if not unwrap(isEnabled) then
+					return
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+					isHovering:set(false)
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+					isPressed:set(false)
+				end
+			end,
+			[OnEvent "Activated"] = (function()
+				if props.Activated then
+					return function()
+						if unwrap(isEnabled, false) then
+							isHovering:set(false)
+							isPressed:set(false)
+							props.Activated()
+						end
+					end
+				end
+			end)(),
+
+			[Children] = {
+				New "ImageLabel" {
+					Name = "Icon",
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(0.8, 0.8),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					ScaleType = Enum.ScaleType.Fit,
+					ImageColor3 = getMotionState(themeProvider:GetColor(props.ImageColorStyle or Enum.StudioStyleGuideColor.ButtonText, modifier), "Spring", 40),
+					Image = props.Icon,
+				},
+			},
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newBaseButton)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="23">
+          <Properties>
+            <string name="Name">Label</string>
+            <string name="Source"><![CDATA[-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local Hydrate = Fusion.Hydrate
+local New = Fusion.New
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Enabled",
+	"TextColorStyle",
+	"TextColor3",
+	"TextSize",
+}
+
+type LabelProperties = {
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	[any]: any,
+}
+
+return function(props: LabelProperties): TextLabel
+	local isEnabled = getState(props.Enabled, true)
+	local textSize = props.TextSize or constants.TextSize
+
+	local mainModifier = getModifier({
+		Enabled = isEnabled
+	})
+
+	local newLabel = New "TextLabel" {
+		Name = "Label",
+		Position = UDim2.fromScale(0, 0),
+		AnchorPoint = Vector2.new(0, 0),
+		Size = Computed(function()
+			return UDim2.new(1, 0, 0, unwrap(textSize))
+		end),
+		Text = "Label",
+		Font = themeProvider:GetFont("Default"),
+		TextColor3 = props.TextColor3 or getMotionState(themeProvider:GetColor(props.TextColorStyle or Enum.StudioStyleGuideColor.MainText, mainModifier), "Spring", 40),
+		TextSize = textSize,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		BorderMode = Enum.BorderMode.Inset,
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newLabel)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="Folder" referent="24">
+          <Properties>
+            <string name="Name">Licenses</string>
+          </Properties>
+          <Item class="ModuleScript" referent="25">
+            <Properties>
+              <string name="Name">StudioComponents</string>
+              <string name="Source">--[[
+	MIT License
+
+	Copyright (c) 2021 sircfenner
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+]]</string>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="ModuleScript" referent="26">
+          <Properties>
+            <string name="Name">LimitedTextInput</string>
+            <string name="Source"><![CDATA[local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local TextInput = require(StudioComponents.TextInput)
+
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local OnChange = Fusion.OnChange
+local Hydrate = Fusion.Hydrate
+
+type numberInput = (number | types.StateObject<number>)?
+
+export type LimitedTextInputProperties = TextInput.TextInputProperties & {
+	Text: (string | types.Value<string>)?,
+	GraphemeLimit: numberInput,
+	OnChange: (newText: string) -> nil,
+	TextLimit: numberInput,
+}
+
+return function(props: LimitedTextInputProperties)
+	local currentText = getState(props.Text, "", "Value")
+
+	local createProps = table.clone(props)
+	createProps.Text = currentText
+	createProps.GraphemeLimit = nil
+	createProps.TextLimit = nil
+	createProps.OnChange = nil
+
+	local function limitText(newText: string)
+		local desiredGraphemeLimit = unwrap(props.GraphemeLimit)
+		local desiredTextLimit = unwrap(props.TextLimit)
+
+		local hasDesiredTextLimit = (desiredTextLimit and desiredTextLimit > -1)
+		local hasDesiredGraphemeLimit = (desiredGraphemeLimit  and desiredGraphemeLimit > -1)
+		local newCurrentText = newText
+
+		if (hasDesiredTextLimit or hasDesiredGraphemeLimit) then
+			local textWithTextLimit = newText:sub(1, if hasDesiredTextLimit then desiredTextLimit else #newText)
+
+			if hasDesiredGraphemeLimit then
+				local graphemesToLength = {}
+				for first, last in utf8.graphemes(textWithTextLimit) do
+					table.insert(graphemesToLength, last)
+				end
+
+				local cutoffLength = graphemesToLength[desiredGraphemeLimit] or graphemesToLength[#graphemesToLength]
+				local textWithGraphemeLimit = textWithTextLimit:sub(1, cutoffLength)
+
+				newCurrentText = textWithGraphemeLimit
+			else
+				newCurrentText = textWithTextLimit
+			end
+		end
+		return newCurrentText
+	end
+
+	local textBoxRef = TextInput(createProps)
+	local lastUpdateText = textBoxRef.Text
+
+	local function updateWithLimitedText(newText: string)
+		local newCurrentText = limitText(newText or textBoxRef.Text)
+
+		textBoxRef.Text = newCurrentText
+		currentText:set(newCurrentText)
+
+		if lastUpdateText~=unwrap(currentText) then
+			lastUpdateText = newCurrentText
+			if props.OnChange then
+				props.OnChange(newCurrentText)
+			end
+		end
+	end
+
+	updateWithLimitedText(textBoxRef.Text)
+
+	return Hydrate (textBoxRef) {
+		[OnChange "Text"] = updateWithLimitedText,
+	}
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="27">
+          <Properties>
+            <string name="Name">Loading</string>
+            <string name="Source"><![CDATA[-- Written by @boatbomber
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+local Observer = Fusion.Observer
+local Children = Fusion.Children
+local Cleanup = Fusion.Cleanup
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Enabled",
+}
+
+type LoadingProperties = {
+	Enabled: types.CanBeState<boolean>?,
+	[any]: any,
+}
+
+local cos = math.cos
+local clock = os.clock
+local pi4 = 12.566370614359172 --4*pi
+
+return function(props: LoadingProperties): Frame
+	local isEnabled = getState(props.Enabled, true)
+	local time = Value(0)
+
+	local animThread = nil
+
+	local function startMotion()
+		if not unwrap(isEnabled) then return end
+
+		if animThread then
+			task.cancel(animThread)
+			animThread = nil
+		end
+
+		animThread = task.defer(function()
+			local startTime = clock()
+			while unwrap(isEnabled) do
+				time:set(clock()-startTime)
+				task.wait(1/25) -- Springs will smooth out the motion so we needn't bother with high refresh rate here
+			end
+		end)
+	end
+
+	startMotion()
+	local observeDisconnect = Observer(isEnabled):onChange(startMotion)
+
+	local function haltAnim()
+		observeDisconnect()
+		if animThread then
+			task.cancel(animThread)
+			animThread = nil
+		end
+	end
+
+	local light = themeProvider:GetColor(Enum.StudioStyleGuideColor.Light, Enum.StudioStyleGuideModifier.Default)
+	local accent = themeProvider:GetColor(Enum.StudioStyleGuideColor.DialogMainButton, Enum.StudioStyleGuideModifier.Default)
+
+	local alphaA = Computed(function()
+		local t = (unwrap(time) + 0.25) * pi4
+		return (cos(t)+1)/2
+	end)
+	local alphaB = Computed(function()
+		local t = unwrap(time) * pi4
+		return (cos(t)+1)/2
+	end)
+
+	local colorA = getMotionState(Computed(function()
+		return unwrap(light):Lerp(unwrap(accent), unwrap(alphaA))
+	end), "Spring", 40)
+
+	local colorB = getMotionState(Computed(function()
+		return unwrap(light):Lerp(unwrap(accent), unwrap(alphaB))
+	end), "Spring", 40)
+
+	local sizeA = getMotionState(Computed(function()
+		local alpha = unwrap(alphaA)
+		return UDim2.fromScale(
+			0.2,
+			0.5 + alpha*0.5
+		)
+	end), "Spring", 40)
+
+	local sizeB = getMotionState(Computed(function()
+		local alpha = unwrap(alphaB)
+		return UDim2.fromScale(
+			0.2,
+			0.5 + alpha*0.5
+		)
+	end), "Spring", 40)
+
+	local frame = New "Frame" {
+		Name = "Loading",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0,constants.TextSize*4, 0,constants.TextSize*1.5),
+		Visible = isEnabled,
+		ClipsDescendants = true,
+		[Cleanup] = haltAnim,
+
+		[Children] = {
+			New "Frame" {
+				Name = "Bar1",
+				BackgroundColor3 = colorA,
+				Size = sizeA,
+				Position = UDim2.fromScale(0.02, 0.5),
+				AnchorPoint = Vector2.new(0,0.5),
+			},
+			New "Frame" {
+				Name = "Bar2",
+				BackgroundColor3 = colorB,
+				Size = sizeB,
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5,0.5),
+			},
+			New "Frame" {
+				Name = "Bar3",
+				BackgroundColor3 = colorA,
+				Size = sizeA,
+				Position = UDim2.fromScale(0.98, 0.5),
+				AnchorPoint = Vector2.new(1,0.5),
+			},
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(frame)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="28">
+          <Properties>
+            <string name="Name">MainButton</string>
+            <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local Button = require(StudioComponents.Button)
+
+local Children = Fusion.Children
+local Hydrate = Fusion.Hydrate
+local New = Fusion.New
+
+local baseProperties = {
+	TextColorStyle = Enum.StudioStyleGuideColor.DialogMainButtonText,
+	BackgroundColorStyle = Enum.StudioStyleGuideColor.DialogMainButton,
+	BorderColorStyle = Enum.StudioStyleGuideColor.ButtonBorder,
+	Name = "MainButton",
+}
+
+return function(props: Button.ButtonProperties): TextButton
+	for index,value in pairs(baseProperties) do
+		if props[index]==nil then
+			props[index] = value
+		end
+	end
+	return Button(props)
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="29">
+          <Properties>
+            <string name="Name">ProgressBar</string>
+            <string name="Source"><![CDATA[-- Written by @boatbomber
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local Hydrate = Fusion.Hydrate
+local New = Fusion.New
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Progress",
+}
+
+type ProgressProperties = {
+	Progress: (number | types.StateObject<number>)?,
+	[any]: any,
+}
+
+return function(props: ProgressProperties): Frame
+	local frame = New "Frame" {
+		Name = "Loading",
+		BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+		Size = UDim2.new(0,constants.TextSize*6, 0, constants.TextSize),
+		ClipsDescendants = true,
+
+		[Children] = {
+			New "UICorner" {
+				CornerRadius = constants.CornerRadius,
+			},
+			New "Frame" {
+				Name = "Fill",
+				BackgroundColor3 = themeProvider:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+				Size = getMotionState(Computed(function()
+					return UDim2.fromScale(unwrap(props.Progress), 1)
+				end), "Spring", 40),
+
+				[Children] = {
+					New "UICorner" {
+						CornerRadius = constants.CornerRadius,
+					},
+				}
+			},
+		}
+	}
+
+    local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+    return Hydrate(frame)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="30">
+          <Properties>
+            <string name="Name">ScrollFrame</string>
+            <string name="Source">-- Written by @boatbomber
+-- Modified by @mvyasu
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BaseScrollFrame = require(StudioComponents.BaseScrollFrame)
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Children = Fusion.Children
+local Computed = Fusion.Computed
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+local Out = Fusion.Out
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"CanvasScaleConstraint",
+	"UIPadding",
+	"UILayout",
+}
+
+-- if you're using this component with the default sizes of the other components
+-- you'll need to have CanvasScaleConstraint set to Enum.ScrollingDirection.X
+export type ScrollFrameProperties = BaseScrollFrame.BaseScrollFrameProperties &amp; {
+	CanvasScaleConstraint: types.CanBeState&lt;Enum.ScrollingDirection?>?,
+	UIPadding: UIPadding?,
+	UILayout: UILayout?,
+} 
+
+return function(props: ScrollFrameProperties): Frame
+	local contentSize = Value(Vector2.zero)
+	local contentPadding = {
+		Bottom = Value(UDim.new()),
+		Top = Value(UDim.new()),
+		Left = Value(UDim.new()),
+		Right = Value(UDim.new()),
+	}
+	
+	if props.UILayout then
+		Hydrate(props.UILayout)({
+			[Out "AbsoluteContentSize"] = contentSize,
+		})
+	end
+
+	if props.UIPadding then
+		Hydrate(props.UIPadding)({
+			[Out "PaddingBottom"] = contentPadding.Bottom,
+			[Out "PaddingTop"] = contentPadding.Top,
+			[Out "PaddingLeft"] = contentPadding.Left,
+			[Out "PaddingRight"] = contentPadding.Right,
+		})
+	end
+	
+	local scrollFrameProps = table.clone(props)
+	scrollFrameProps[Children] = {props.UIPadding, props.UILayout, props[Children]}
+	
+	for index,value in pairs {
+		CanvasSize = Computed(function()
+			local contentSize = unwrap(contentSize) or Vector2.zero
+			local currentPadding = {}
+			for index,value in pairs(contentPadding) do
+				currentPadding[index] = unwrap(value) or UDim.new()
+			end
+
+			local scaleConstraint = unwrap(props.CanvasScaleConstraint)
+			local isXConstrained = if scaleConstraint then table.find({"XY", "X"}, scaleConstraint.Name)~=nil else false
+			local isYConstrained = if scaleConstraint then table.find({"XY", "Y"}, scaleConstraint.Name)~=nil else false
+			
+			return UDim2.new(
+				if isXConstrained then 0 else currentPadding.Left.Scale + currentPadding.Right.Scale, 
+				if isXConstrained then 0 else contentSize.X + currentPadding.Left.Offset + currentPadding.Right.Offset,
+				if isYConstrained then 0 else currentPadding.Top.Scale + currentPadding.Bottom.Scale, 
+				if isYConstrained then 0 else contentSize.Y + currentPadding.Top.Offset + currentPadding.Bottom.Offset
+			)
+		end),
+	} do
+		if scrollFrameProps[index]==nil then
+			scrollFrameProps[index] = value
+		end
+	end
+	
+	return BaseScrollFrame(stripProps(scrollFrameProps, COMPONENT_ONLY_PROPERTIES))
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="31">
+          <Properties>
+            <string name="Name">Shadow</string>
+            <string name="Source"><![CDATA[-- Written by @boatbomber
+
+type ShadowProperties = {
+    Side: string,
+	Transparency: number?,
+	[any]: any,
+}
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local constants = require(StudioComponentsUtil.constants)
+local unwrap = require(StudioComponentsUtil.unwrap)
+
+local New = Fusion.New
+local Computed = Fusion.Computed
+
+local SideData = {
+	top = {
+		image = "rbxassetid://6528009956",
+		size = Computed(function()
+			return UDim2.new(1,0,0,constants.TextSize)
+		end),
+		position = Computed(function()
+			return UDim2.new(0,0,0,constants.TextSize)
+		end)
+	},
+	bottom = {
+		image = "rbxassetid://6185927567",
+		size = Computed(function()
+			return UDim2.new(1,0,0,constants.TextSize)
+		end),
+		position = Computed(function()
+			return UDim2.new(0,0,1,0)
+		end)
+	},
+	left = {
+		image = "rbxassetid://6978297327",
+		size = Computed(function()
+			return UDim2.new(0,constants.TextSize,1,0)
+		end),
+		position = Computed(function()
+			return UDim2.new(0,constants.TextSize,0,0)
+		end)
+	},
+	right = {
+		image = "rbxassetid://6441569774",
+		size = Computed(function()
+			return UDim2.new(0,constants.TextSize,1,0)
+		end),
+		position = Computed(function()
+			return UDim2.new(1,0,0,0)
+		end)
+	},
+}
+
+
+return function(props: ShadowProperties): Frame
+	local Side = SideData[string.lower(props.Side or "right")]
+
+	return New "ImageLabel" { -- Shadow
+		Name = "Shadow",
+		BackgroundTransparency = 1,
+		LayoutOrder = props.LayoutOrder or 10000,
+		Image = Side.image,
+		ImageTransparency = Computed(function()
+			if not unwrap(themeProvider.IsDark)then
+				-- Softer shadows on light themes
+				return ((props.Transparency or 0) * 0.55) + 0.45
+			else
+				return props.Transparency or 0
+			end
+		end),
+
+		Size = Side.size,
+		Position = Side.position,
+	}
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="32">
+          <Properties>
+            <string name="Name">Slider</string>
+            <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getDragInput = require(StudioComponentsUtil.getDragInput)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local Observer = Fusion.Observer
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Cleanup = Fusion.Cleanup
+local Value = Fusion.Value
+local Out = Fusion.Out
+local New = Fusion.New
+local Ref = Fusion.Ref
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"ZIndex",
+	"HandleSize",
+	"OnChange",
+	"Value",
+	"Min",
+	"Max",
+	"Step",
+	"Enabled",
+}
+
+type numberInput = types.CanBeState&lt;number>?
+
+type SliderProperties = {
+	HandleSize: types.CanBeState&lt;UDim2>?,
+	Enabled: types.CanBeState&lt;boolean>?,
+	OnChange: ((newValue: number) -> nil)?,
+	Value: types.CanBeState&lt;number>?,
+	Min: numberInput,
+	Max: numberInput,
+	Step: numberInput,
+	[any]: any,
+}
+
+return function(props: SliderProperties): TextButton
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+	
+	local handleSize = props.HandleOffsetSize or UDim2.new(0, 12, 1, -2)
+
+	local handleRegion = Value()
+	local inputValue = getState(props.Value, 1)
+	local currentValue, currentAlpha, isDragging = getDragInput({
+		Instance = handleRegion,
+		Enabled = isEnabled,
+		Value = Value(Vector2.new(unwrap(inputValue), 0)),
+		Min = Computed(function()
+			return Vector2.new(unwrap(props.Min) or 0, 0)
+		end),
+		Max = Computed(function()
+			return Vector2.new(unwrap(props.Max) or 1, 0)
+		end),
+		Step = Computed(function()
+			return Vector2.new(unwrap(props.Step) or -1, 0)
+		end),
+		OnChange = function(newValue: Vector2)
+			if props.OnChange then
+				props.OnChange(newValue.X)
+			end
+		end,
+	})
+
+	local cleanupDraggingObserver = Observer(isDragging):onChange(function()
+		inputValue:set(unwrap(currentValue).X)
+	end)
+
+	local cleanupInputValueObserver = Observer(inputValue):onChange(function()
+		currentValue:set(Vector2.new(unwrap(inputValue, false), 0))
+	end)
+
+	local function cleanupCallback()
+		cleanupDraggingObserver()
+		cleanupInputValueObserver()
+	end
+
+	local zIndex = Computed(function()
+		return (unwrap(props.ZIndex) or 0) + 1
+	end)
+
+	local mainModifier = getModifier({
+		Enabled = isEnabled,
+	})
+	
+	local handleModifier = getModifier({
+		Enabled = isEnabled,
+		Selected = isDragging,
+		Hovering = isHovering,
+	})
+
+	local handleFill = themeProvider:GetColor(Enum.StudioStyleGuideColor.Button)
+	local handleBorder = themeProvider:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder, handleModifier)
+	local barAbsSize = Value(Vector2.zero)
+	
+	local newSlider = New "Frame" {
+		Name = "Slider",
+		Size = UDim2.new(1, 0, 0, 22),
+		ZIndex = zIndex,
+		BackgroundTransparency = 1,
+		[Cleanup] = cleanupCallback,
+
+		[Children] = {
+			BoxBorder {
+				Color = themeProvider:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder),
+				CornerRadius = UDim.new(0, 1),
+				
+				[Children] = New "Frame" {
+					Name = "Bar",
+					ZIndex = zIndex,
+					Position = UDim2.fromScale(.5, .5),
+					AnchorPoint = Vector2.new(.5, .5),
+					BorderSizePixel = 0,
+					
+					[Out "AbsoluteSize"] = barAbsSize,
+					
+					Size = Computed(function()
+						local handleSize = unwrap(handleSize) or UDim2.new()
+						return UDim2.new(1, -handleSize.X.Offset, 0, 5)
+					end),
+
+					BackgroundColor3 = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.InputFieldBackground, mainModifier), "Spring", 40),
+
+					BackgroundTransparency = getMotionState(Computed(function()
+						return if not unwrap(isEnabled) then 0.4 else 0
+					end), "Spring", 40),
+				}
+			},
+			New "Frame" {
+				Name = "HandleRegion",
+				ZIndex = 1,
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				[Ref] = handleRegion,
+
+				[Children] = BoxBorder {
+					Color =  getMotionState(Computed(function()
+						return unwrap(handleBorder):Lerp(unwrap(handleFill), if not unwrap(isEnabled) then .5 else 0)
+					end), "Spring", 40),
+
+					[Children] = New "Frame" {
+						Name = "Handle",
+						BorderMode = Enum.BorderMode.Inset,
+						BackgroundColor3 = handleFill,
+						BorderSizePixel = 0,
+						
+						Size = handleSize,
+						
+						AnchorPoint = Vector2.new(.5, .5),
+
+						Position = getMotionState(Computed(function()
+							local handleSize = unwrap(handleSize) or UDim2.new()
+							local absoluteBarSize = unwrap(barAbsSize) or Vector2.zero
+							return UDim2.new(
+								0, (unwrap(currentAlpha).X*absoluteBarSize.X) + handleSize.X.Offset/2,
+								.5, 0
+							)
+						end), "Spring", 40),
+
+						[OnEvent "InputBegan"] = function(inputObject)
+							if not unwrap(isEnabled) then
+								return
+							elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+								isHovering:set(true)
+							end
+						end,
+						
+						[OnEvent "InputEnded"] = function(inputObject)
+							if not unwrap(isEnabled) then
+								return
+							elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+								isHovering:set(false)
+							end
+						end,
+					}
+				}
+			}
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newSlider)(hydrateProps)
+end</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="33">
+          <Properties>
+            <string name="Name">TextInput</string>
+            <string name="Source"><![CDATA[-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Computed = Fusion.Computed
+local OnChange = Fusion.OnChange
+local Children = Fusion.Children
+local Hydrate = Fusion.Hydrate
+local OnEvent = Fusion.OnEvent
+local Value = Fusion.Value
+local New = Fusion.New
+
+local PLACEHOLDER_TEXT_COLOR = Color3.fromRGB(102, 102, 102)
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Enabled",
+	"ClearTextOnFocus"
+}
+
+export type TextInputProperties = {
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	[any]: any,
+}
+
+return function(props: TextInputProperties): TextLabel
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+	local isFocused = Value(false)
+
+	local mainModifier = getModifier({
+		Enabled = isEnabled,
+	})
+	
+	local borderModifier = getModifier({
+		Enabled = isEnabled,
+		Selected = isFocused,
+		Hovering = isHovering,
+	})
+
+	local currentTextBounds = Value(Vector2.new())
+	local absoluteTextBoxSize = Value(Vector2.new())
+
+	local newTextBox = BoxBorder {
+		Color = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder, borderModifier), "Spring", 40),
+
+		[Children] = New "TextBox" {
+			Name = "TextInput",
+			Size = UDim2.new(1, 0, 0, 25),
+			BackgroundColor3 = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.InputFieldBackground, mainModifier), "Spring", 40),
+			Font = themeProvider:GetFont("Default"),
+			Text = "",
+			TextSize = constants.TextSize,
+			TextColor3 = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.MainText, mainModifier), "Spring", 40),
+			PlaceholderColor3 = PLACEHOLDER_TEXT_COLOR,
+			TextXAlignment = Computed(function()
+				local bounds = unwrap(currentTextBounds).X + 5 -- because of padding
+				local pixels = unwrap(absoluteTextBoxSize).X
+				return if bounds >= pixels then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
+			end),
+			TextEditable = isEnabled,
+			ClipsDescendants = true,
+			ClearTextOnFocus = Computed(function()
+				local clearTextOnFocus = (unwrap(props.ClearTextOnFocus) or false)
+				local isEnabled = unwrap(isEnabled)
+				return clearTextOnFocus and isEnabled
+			end),
+
+			[OnChange "TextBounds"] = function(newTextBounds)
+				currentTextBounds:set(newTextBounds)
+			end,
+			[OnChange "AbsoluteSize"] = function(newAbsoluteSize)
+				absoluteTextBoxSize:set(newAbsoluteSize)
+			end,
+			[OnEvent "InputBegan"] = function(inputObject)
+				if not unwrap(isEnabled) then
+					return
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+					isHovering:set(true)
+				end
+			end,
+			[OnEvent "InputEnded"] = function(inputObject)
+				if not unwrap(isEnabled) then
+					return
+				elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+					isHovering:set(false)
+				end
+			end,
+			[OnEvent "Focused"] = function()
+				isFocused:set(true)
+			end,
+			[OnEvent "FocusLost"] = function()
+				isFocused:set(false)
+			end,
+
+			[Children] = New "UIPadding" {
+				PaddingLeft = UDim.new(0, 5),
+				PaddingRight = UDim.new(0, 5),
+			},
+		}
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newTextBox)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="34">
+          <Properties>
+            <string name="Name">Title</string>
+            <string name="Source"><![CDATA[-- Written by @boatbomber
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local getState = require(StudioComponentsUtil.getState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local constants = require(StudioComponentsUtil.constants)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+local stripProps = require(StudioComponentsUtil.stripProps)
+
+local Computed = Fusion.Computed
+local Hydrate = Fusion.Hydrate
+local New = Fusion.New
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Enabled",
+	"TextColorStyle",
+	"TextColor3",
+	"TextSize",
+}
+
+type LabelProperties = {
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	[any]: any,
+}
+
+return function(props: LabelProperties): TextLabel
+	local isEnabled = getState(props.Enabled, true)
+	local textSize = props.TextSize or constants.TextSize * 1.3
+
+	local newLabel = New "TextLabel" {
+		Name = "Label",
+		Position = UDim2.fromScale(0, 0),
+		AnchorPoint = Vector2.new(0, 0),
+		Size = Computed(function()
+			return UDim2.new(1, 0, 0, unwrap(textSize))
+		end),
+		Text = "Label",
+		Font = themeProvider:GetFont("Bold"),
+		TextColor3 = props.TextColor3 or themeProvider:GetColor(props.TextColorStyle or Enum.StudioStyleGuideColor.MainText, Computed(function()
+			if not unwrap(isEnabled) then
+				return Enum.StudioStyleGuideModifier.Disabled
+			end
+			return Enum.StudioStyleGuideModifier.Default
+		end)),
+		TextSize = textSize,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		BorderMode = Enum.BorderMode.Inset,
+	}
+
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+	return Hydrate(newLabel)(hydrateProps)
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="Folder" referent="35">
+          <Properties>
+            <string name="Name">Util</string>
+          </Properties>
+          <Item class="ModuleScript" referent="36">
+            <Properties>
+              <string name="Name">constants</string>
+              <string name="Source">return {
+	CurvedBoxes = true,
+	CornerRadius = UDim.new(0, 2),
+	TextSize = 14,
+}</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="37">
+            <Properties>
+              <string name="Name">getDragInput</string>
+              <string name="Source"><![CDATA[-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+--[[
+
+	1. onInputBegan
+		setState({ Dragging = true })
+		if widget then
+			globalConnection = RunService.Heartbeat(() => onInput(widget.relativePosition))
+		else
+			globalConnection = InputService.InputChanged(() => onInput(input.Position))
+	2. onInputEnded
+		setState({ Dragging = false })
+		globalConnection:Disconnect()
+	3. onInputChanged
+		if state.Dragging then
+			onInput(input.Position)
+	guiObject.InputBegan(onInputBegan)
+	guiObject.InputEnded(onInputEnded)
+	guiObject.InputChanged(onInputChanged)
+	(3) is useful in the widget case because
+	- heartbeat is a frame late
+	- changed will fire on same frame at least while mouse is over the area
+	- so we only get frame-late input when mouse is outside the area
+
+--]]
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local getState = require(script.Parent.getState)
+local unwrap = require(script.Parent.unwrap)
+local types = require(script.Parent.types)
+
+local New = Fusion.New
+local Value = Fusion.Value
+local Computed = Fusion.Computed
+local Children = Fusion.Children
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Observer = Fusion.Observer
+local Cleanup = Fusion.Cleanup
+
+type vector2Value = types.Value<Vector2>
+type vector2Input = (Vector2 | vector2Value)?
+
+type DragInputProperites = {
+	Instance: GuiObject,
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	OnChange: ((newValue: Vector2) -> Vector2?)?,
+	Value: vector2Input,
+	Min: vector2Input,
+	Max: vector2Input,
+	Step: vector2Input,
+}
+
+return function(props: DragInputProperites): (vector2Value, types.Computed<Vector2>, types.Value<boolean>)
+	local isEnabled = getState(props.Enabled, true)
+	local isDragging = Value(false)
+
+	local connectionProvider = props.Instance
+	local globalConnection = nil
+
+	local currentValue = getState(props.Value, Vector2.new(0, 0), "Value")
+	local maxValue = getState(props.Max, Vector2.new(1, 1))
+	local minValue = getState(props.Min, Vector2.new(0, 0))
+
+	local range = Computed(function()
+		return unwrap(maxValue) - unwrap(minValue)
+	end)
+
+	local currentAlpha = Computed(function()
+		return (unwrap(currentValue) - unwrap(minValue)) / unwrap(range)
+	end)
+
+	local function processInput(position)
+		local connectionProvider = unwrap(connectionProvider, false)
+		if connectionProvider then
+			local offset = position - connectionProvider.AbsolutePosition
+			local alpha = offset / connectionProvider.AbsoluteSize
+
+			local range = unwrap(range, false)
+			local step = unwrap(props.Step or Vector2.new(-1, -1), false)
+
+			local value = range * alpha
+			value = Vector2.new(
+				if step.X>0 then math.round(value.X / step.X) * step.X else value.X,
+				if step.Y>0 then math.round(value.Y / step.Y) * step.Y else value.Y
+			)
+
+			value = Vector2.new(
+				math.clamp(value.X, 0, range.X) + unwrap(minValue, false).X,
+				math.clamp(value.Y, 0, range.Y) + unwrap(minValue, false).Y
+			)
+
+			if value ~= unwrap(currentValue) then
+				if props.OnChange then
+					local newValue = props.OnChange(value)
+					currentValue:set(if newValue~=nil then newValue else value)
+				else
+					currentValue:set(value)
+				end
+			end
+		end
+	end
+
+	local function onDragStart(inputObject)
+		local connectionProvider = unwrap(connectionProvider)
+		local currentlyDragging = unwrap(isDragging)
+		if not unwrap(isEnabled) or currentlyDragging or inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 or connectionProvider==nil or globalConnection then
+			return
+		end
+
+		isDragging:set(true)
+		processInput(Vector2.new(inputObject.Position.X, inputObject.Position.Y))
+
+		local widget = connectionProvider:FindFirstAncestorWhichIsA("DockWidgetPluginGui")
+		if widget ~= nil then
+			globalConnection = game:GetService("RunService").Heartbeat:Connect(function()
+				processInput(widget:GetRelativeMousePosition())
+			end)
+		else
+			globalConnection = game:GetService("UserInputService").InputChanged:Connect(function(newInput)
+				if newInput.UserInputType == Enum.UserInputType.MouseMovement then
+					processInput(Vector2.new(newInput.Position.x, newInput.Position.y))
+				end
+			end)
+		end
+	end
+
+	local function cleanupGlobalConnection()
+		if globalConnection then
+			globalConnection:Disconnect()
+			globalConnection = nil
+		end
+	end
+
+	local tasks = {}
+	local function cleanupTasks()
+		for _,cleanupTask in pairs(tasks) do
+			cleanupTask()
+		end
+	end
+
+	table.insert(tasks, Observer(props.Instance):onChange(function()
+		local connectionProvider = unwrap(connectionProvider, false)
+		if connectionProvider == nil then
+			cleanupTasks()
+		else
+			table.insert(tasks, cleanupGlobalConnection)
+
+			Hydrate(connectionProvider)({
+				[Cleanup] = cleanupTasks,
+				[OnEvent "InputBegan"] = onDragStart,
+				[OnEvent "InputEnded"] = function(inputObject)
+					if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+						isDragging:set(false)
+						cleanupGlobalConnection()
+					end
+				end,
+				[OnEvent "InputChanged"] = function(inputObject)
+					if unwrap(isDragging) then
+						processInput(Vector2.new(inputObject.Position.X, inputObject.Position.Y))
+					end
+				end,
+			})
+		end
+	end))
+
+	return currentValue, currentAlpha, isDragging
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="38">
+            <Properties>
+              <string name="Name">getModifier</string>
+              <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local Computed = Fusion.Computed
+
+local unwrap = require(script.Parent.unwrap)
+local types = require(script.Parent.types)
+
+type modifierInput = {
+	Enabled: types.CanBeState&lt;boolean>?,
+	Hovering: types.CanBeState&lt;boolean>?,
+	Selected: types.CanBeState&lt;boolean>?,
+	Pressed: types.CanBeState&lt;boolean>?,
+	Otherwise: types.CanBeState&lt;Enum.StudioStyleGuideModifier>?,
+}
+
+return function(modifierInput: modifierInput): types.Computed&lt;any>
+	local isEnabled = modifierInput.Enabled
+	local isHovering = modifierInput.Hovering
+	local isSelected = modifierInput.Selected
+	local isPressed = modifierInput.Pressed
+
+	return Computed(function()
+		local isDisabled = not unwrap(isEnabled)
+		local isHovering = unwrap(isHovering)
+		local isSelected = unwrap(isSelected)
+		local isPressed = unwrap(isPressed)
+		if isDisabled then
+			return Enum.StudioStyleGuideModifier.Disabled
+		elseif isSelected then
+			return Enum.StudioStyleGuideModifier.Selected
+		elseif isPressed then
+			return Enum.StudioStyleGuideModifier.Pressed
+		elseif isHovering then
+			return Enum.StudioStyleGuideModifier.Hover
+		end
+		return unwrap(modifierInput.Otherwise) or Enum.StudioStyleGuideModifier.Default
+	end)
+end</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="39">
+            <Properties>
+              <string name="Name">getMotionState</string>
+              <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local Computed = Fusion.Computed
+
+local unwrap = require(script.Parent.unwrap)
+local types = require(script.Parent.types)
+
+-- this technically could be changed later on in a way that
+-- allows people to change whether this can be toggled
+local isMotionEnabled = true
+
+--motionStateTypes: Tween, Spring
+return function(goalState: types.StateObject&lt;any>, motionStateType: string, ...:any): types.CanBeState&lt;any>
+	local motionTypeFn = Fusion[motionStateType]
+	if typeof(motionTypeFn)~="function" then
+		warn(("[%s]: No motionStateType with the name '%s' was found in Fusion!"):format(script.Name, tostring(motionStateType)))
+		return goalState
+	end
+	
+	local motionGoalState = motionTypeFn(goalState, ...)
+	local isMotionEnabledAState = unwrap(isMotionEnabled)~=isMotionEnabled
+	
+	if isMotionEnabledAState then
+		return Computed(function()
+			if unwrap(isMotionEnabled) then
+				return unwrap(motionGoalState)
+			end
+			return goalState
+		end)
+	else
+		return if isMotionEnabled then motionGoalState else goalState
+	end
+end</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="40">
+            <Properties>
+              <string name="Name">getSelectedState</string>
+              <string name="Source">local unwrap = require(script.Parent.unwrap)
+local types = require(script.Parent.types)
+
+type GetSelectedStateProperties = {
+	Value: types.Value&lt;any>?,
+	Options: types.CanBeState&lt;{any}>?,
+	OnSelected: ((selectedOption: any)->nil)?,
+}
+
+return function(props: GetSelectedStateProperties): ()->any
+	return function()
+		local currentValue = unwrap(props.Value)
+		local availableOptions = unwrap(props.Options) or {}
+		if currentValue==nil or not table.find(availableOptions, currentValue) then
+			local _,nextItem = next(availableOptions)
+			if nextItem~=nil then
+				if props.OnSelected then
+					props.OnSelected(nextItem)
+				end
+				return nextItem
+			end
+		end
+		return currentValue
+	end
+end</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="41">
+            <Properties>
+              <string name="Name">getState</string>
+              <string name="Source">local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local unwrap = require(script.Parent.unwrap)
+local types = require(script.Parent.types)
+
+type stateOrAny = types.StateObject&lt;any> | any
+
+return function(inputValue: stateOrAny, defaultValue: stateOrAny, mustBeKind: string?)
+	local stateKind = mustBeKind or "Value"
+	local isInputAState = unwrap(inputValue, false)~=inputValue
+	local isDefaultAState = unwrap(defaultValue, false)~=defaultValue
+	
+	if isInputAState and (mustBeKind==nil or inputValue.kind==mustBeKind) then
+		return inputValue
+	elseif inputValue~=nil then
+		return Fusion[stateKind](unwrap(inputValue))
+	end
+	
+	return if isDefaultAState then defaultValue else Fusion[stateKind](defaultValue)
+end</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="42">
+            <Properties>
+              <string name="Name">stripProps</string>
+              <string name="Source"><![CDATA[return function(props, exclude)
+    local export = table.clone(props)
+    for _, k in ipairs(exclude) do
+        export[k] = nil
+    end
+    return export
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="43">
+            <Properties>
+              <string name="Name">themeProvider</string>
+              <string name="Source"><![CDATA[local types = require(script.Parent.types)
+
+type styleStyleGuideColor = Enum.StudioStyleGuideColor | types.StateObject<Enum.StudioStyleGuideColor>
+type styleGuideModifier = Enum.StudioStyleGuideModifier | types.StateObject<Enum.StudioStyleGuideModifier>
+type computedOrValue = types.Computed<Color3> | types.Value<Color3>
+
+local Studio = settings().Studio
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local unwrap = require(script.Parent.unwrap)
+
+local Computed = Fusion.Computed
+local Value = Fusion.Value
+
+local currentTheme = {}
+local themeProvider = {
+	Theme = Value(Studio.Theme.Name),
+	Fonts = {
+		Default = Enum.Font.SourceSans,
+		SemiBold = Enum.Font.SourceSansSemibold,
+		Bold = Enum.Font.SourceSansBold,
+		Black = Enum.Font.GothamBlack,
+		Mono = Enum.Font.Code,
+	},
+	IsDark = Value(true),
+}
+
+function themeProvider:GetColor(studioStyleGuideColor: styleStyleGuideColor, studioStyleGuideModifier: styleGuideModifier?): computedOrValue
+	local hasState = (unwrap(studioStyleGuideModifier, false) ~= studioStyleGuideModifier) or (unwrap(studioStyleGuideColor, false) ~= studioStyleGuideColor)
+
+	local function isCorrectType(value, enumType)
+		local unwrapped = unwrap(value, false)
+		local isState = unwrapped ~= value and unwrapped~=nil
+		assert((value==nil or isState) or (typeof(value)=="EnumItem" and value.EnumType==enumType), "Incorrect type")
+	end
+
+	isCorrectType(studioStyleGuideColor, Enum.StudioStyleGuideColor)
+	isCorrectType(studioStyleGuideModifier, Enum.StudioStyleGuideModifier)
+
+	local unwrappedColor = unwrap(studioStyleGuideColor, false)
+	local unwrappedModifier = unwrap(studioStyleGuideModifier, false)
+
+	if not currentTheme[unwrappedColor] then
+		currentTheme[unwrappedColor] = {}
+	end
+
+	local themeValue = (function()
+		local styleGuideModifier = if unwrappedModifier~=nil then unwrappedModifier else Enum.StudioStyleGuideModifier.Default
+
+		local existingValue = currentTheme[unwrappedColor][styleGuideModifier]
+		if existingValue then
+			return existingValue
+		end
+
+		local newThemeValue = Value(Studio.Theme:GetColor(unwrappedColor, styleGuideModifier))
+		currentTheme[unwrappedColor][styleGuideModifier] = newThemeValue
+
+		return newThemeValue
+	end)()
+
+	return if not hasState then themeValue else Computed(function()
+		local currentColor = unwrap(studioStyleGuideColor)
+		local currentModifier = unwrap(studioStyleGuideModifier)
+		local currentValueState = self:GetColor(currentColor, currentModifier)
+		return currentValueState:get()
+	end)
+end
+
+function themeProvider:GetFont(fontName: (string | types.StateObject<string>)?): types.Computed<Enum.Font>
+	return Computed(function()
+		local givenFontName = unwrap(fontName)
+		local fontToGet = self.Fonts.Default
+		if givenFontName~=nil and self.Fonts[givenFontName] then
+			fontToGet = self.Fonts[givenFontName]
+		end
+		return unwrap(fontToGet)
+	end)
+end
+
+local function updateTheme()
+	for studioStyleGuideColor, styleGuideModifiers: {Enum.StudioStyleGuideModifier} in pairs(currentTheme) do
+		for studioStyleGuideModifier, valueState in pairs(styleGuideModifiers) do
+			valueState:set(Studio.Theme:GetColor(studioStyleGuideColor, studioStyleGuideModifier))
+		end
+	end
+	themeProvider.Theme:set(Studio.Theme.Name)
+
+	local _,_,v = Studio.Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground):ToHSV()
+	themeProvider.IsDark:set(v<=0.6)
+end
+
+do
+	local themeChangedConnection = Studio.ThemeChanged:Connect(updateTheme)
+	updateTheme()
+
+	Plugin.Unloading:Connect(function()
+		themeChangedConnection:Disconnect()
+		themeChangedConnection = nil
+	end)
+end
+
+return themeProvider
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="44">
+            <Properties>
+              <string name="Name">types</string>
+              <string name="Source">--!strict
+
+-- This is a duplicate of Fusion's PubTypes module because for whatever reason type checking doesn't like :FindFirstAncestorWhichIsA()
+-- While not a pretty solution, it's the easier solution without causing a huge mess within the components 
+-- If the components are updated to use a newer version of Fusion, then this types module can be updated too
+
+type Set&lt;T> = {[T]: any}
+
+--[[
+	General use types
+]]
+
+-- A unique symbolic value.
+export type Symbol = {
+	type: string, -- replace with "Symbol" when Luau supports singleton types
+	name: string
+}
+
+-- Types that can be expressed as vectors of numbers, and so can be animated.
+export type Animatable =
+	number |
+CFrame |
+Color3 |
+ColorSequenceKeypoint |
+DateTime |
+NumberRange |
+NumberSequenceKeypoint |
+PhysicalProperties |
+Ray |
+Rect |
+Region3 |
+Region3int16 |
+UDim |
+UDim2 |
+Vector2 |
+Vector2int16 |
+Vector3 |
+Vector3int16
+
+-- A task which can be accepted for cleanup.
+export type Task =
+	Instance |
+RBXScriptConnection |
+() -> () |
+{destroy: (any) -> ()} |
+{Destroy: (any) -> ()} |
+{Task}
+
+-- Script-readable version information.
+export type Version = {
+	major: number,
+	minor: number,
+	isRelease: boolean
+}
+--[[
+	Generic reactive graph types
+]]
+
+-- A graph object which can have dependents.
+export type Dependency = {
+	dependentSet: Set&lt;Dependent>
+}
+
+-- A graph object which can have dependencies.
+export type Dependent = {
+	update: (Dependent) -> boolean,
+	dependencySet: Set&lt;Dependency>
+}
+
+-- An object which stores a piece of reactive state.
+export type StateObject&lt;T> = Dependency &amp; {
+	type: string, -- replace with "State" when Luau supports singleton types
+	kind: string,
+	get: (StateObject&lt;T>, asDependency: boolean?) -> T
+}
+
+-- Either a constant value of type T, or a state object containing type T.
+export type CanBeState&lt;T> = StateObject&lt;T> | T
+
+--[[
+	Specific reactive graph types
+]]
+
+-- A state object whose value can be set at any time by the user.
+export type Value&lt;T> = StateObject&lt;T> &amp; {
+	-- kind: "State" (add this when Luau supports singleton types)
+	set: (Value&lt;T>, newValue: any, force: boolean?) -> ()
+}
+
+-- A state object whose value is derived from other objects using a callback.
+export type Computed&lt;T> = StateObject&lt;T> &amp; Dependent &amp; {
+	-- kind: "Computed" (add this when Luau supports singleton types)
+}
+
+-- A state object whose value is derived from other objects using a callback.
+export type ForPairs&lt;KO, VO> = StateObject&lt;{ [KO]: VO }> &amp; Dependent &amp; {
+	-- kind: "ForPairs" (add this when Luau supports singleton types)
+}
+-- A state object whose value is derived from other objects using a callback.
+export type ForKeys&lt;KO, V> = StateObject&lt;{ [KO]: V }> &amp; Dependent &amp; {
+	-- kind: "ForKeys" (add this when Luau supports singleton types)
+}
+-- A state object whose value is derived from other objects using a callback.
+export type ForValues&lt;K, VO> = StateObject&lt;{ [K]: VO }> &amp; Dependent &amp; {
+	-- kind: "ForKeys" (add this when Luau supports singleton types)
+}
+
+-- A state object which follows another state object using tweens.
+export type Tween&lt;T> = StateObject&lt;T> &amp; Dependent &amp; {
+	-- kind: "Tween" (add this when Luau supports singleton types)
+}
+
+-- A state object which follows another state object using spring simulation.
+export type Spring&lt;T> = StateObject&lt;T> &amp; Dependent &amp; {
+	-- kind: "Spring" (add this when Luau supports singleton types)
+	-- Uncomment when ENABLE_PARAM_SETTERS is enabled
+	-- setPosition: (Spring&lt;T>, newValue: Animatable) -> (),
+	-- setVelocity: (Spring&lt;T>, newValue: Animatable) -> (),
+	-- addVelocity: (Spring&lt;T>, deltaValue: Animatable) -> ()
+}
+
+-- An object which can listen for updates on another state object.
+export type Observer = Dependent &amp; {
+	-- kind: "Observer" (add this when Luau supports singleton types)
+	onChange: (Observer, callback: () -> ()) -> (() -> ())
+}
+
+--[[
+	Instance related types
+]]
+
+-- A semi-weak instance reference.
+export type SemiWeakRef = {
+	type: string, -- replace with "SemiWeakRef" when Luau supports singleton types
+	instance: Instance?
+}
+
+-- Denotes children instances in an instance or component's property table.
+export type SpecialKey = {
+	type: string, -- replace with "SpecialKey" when Luau supports singleton types
+	kind: string,
+	stage: string, -- replace with "self" | "descendants" | "ancestor" | "observer" when Luau supports singleton types
+	apply: (SpecialKey, value: any, applyTo: SemiWeakRef, cleanupTasks: {Task}) -> ()
+}
+
+-- A collection of instances that may be parented to another instance.
+export type Children = Instance | StateObject&lt;Children> | {[any]: Children}
+
+-- A table that defines an instance's properties, handlers and children.
+export type PropertyTable = {[string | SpecialKey]: any}
+
+return nil</string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="45">
+            <Properties>
+              <string name="Name">unwrap</string>
+              <string name="Source">return function(x: any, useDependency: boolean?): any
+	if typeof(x)=="table" and x.type=="State" then
+		return x:get(useDependency)
+	end
+	return x
+end</string>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="ModuleScript" referent="46">
+          <Properties>
+            <string name="Name">VerticalCollapsibleSection</string>
+            <string name="Source"><![CDATA[-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local VerticalExpandingList = require(StudioComponents.VerticalExpandingList)
+local BoxBorder = require(StudioComponents.BoxBorder)
+local Label = require(StudioComponents.Label)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local themeProvider = require(StudioComponentsUtil.themeProvider)
+local getModifier = require(StudioComponentsUtil.getModifier)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local constants = require(StudioComponentsUtil.constants)
+local getState = require(StudioComponentsUtil.getState)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Children = Fusion.Children
+local Computed = Fusion.Computed
+local OnEvent = Fusion.OnEvent
+local Hydrate = Fusion.Hydrate
+local Value = Fusion.Value
+local New = Fusion.New
+
+local HEADER_HEIGHT = 25
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Padding",
+	"Collapsed",
+	"Text",
+	"TextColor3",
+	"Enabled",
+	Children,
+}
+
+type VerticalExpandingListProperties = {
+	Enabled: (boolean | types.StateObject<boolean>)?,
+	Collapsed: (boolean | types.Value<boolean>)?,
+	Padding: (UDim | types.StateObject<UDim>)?,
+	[any]: any,
+}
+
+return function(props: VerticalExpandingListProperties): Frame
+	local shouldBeCollapsed = getState(props.Collapsed, false, "Value")
+	local isEnabled = getState(props.Enabled, true)
+	local isHovering = Value(false)
+
+	local modifier = getModifier({
+		Enabled = isEnabled,
+		Hovering = isHovering,
+		Otherwise = Computed(function()
+			return if unwrap(themeProvider.IsDark) then Enum.StudioStyleGuideModifier.Default else Enum.StudioStyleGuideModifier.Pressed
+		end),
+	})
+
+	local isCollapsed = Computed(function()
+		local shouldBeCollapsed = unwrap(shouldBeCollapsed)
+		local isEnabled = unwrap(isEnabled)
+		return if isEnabled then shouldBeCollapsed else true
+	end)
+
+	local labelColor = themeProvider:GetColor(Enum.StudioStyleGuideColor.BrightText, modifier)
+	local backgroundColor = themeProvider:GetColor(Enum.StudioStyleGuideColor.MainBackground)
+	local themeColorModifier = Computed(function()
+		local _, _, v = unwrap(backgroundColor):ToHSV()
+		return if v<.5 then -1 else 1
+	end)
+
+	return Hydrate(VerticalExpandingList {
+		Name = "VerticalCollapsibleSection",
+		BackgroundTransparency = 1,
+		--TODO: remove this +2 once BorderMode becomes a thing for UIStroke
+		Size = UDim2.new(1, 0, 0, HEADER_HEIGHT+2),
+		AutomaticSize = Computed(function()
+			return isCollapsed:get() and Enum.AutomaticSize.None or Enum.AutomaticSize.Y
+		end),
+		Padding = props.Padding,
+
+		[Children] = {
+			--TODO: remove this UIPadding and Frame once BorderMode becomes a thing for UIStroke
+			-- until then, this will need to stay here
+			New "UIPadding" {
+				Name = "BorderUIPadding",
+				PaddingRight = UDim.new(0, 1),
+				PaddingLeft = UDim.new(0, 1),
+				PaddingTop = UDim.new(0, 1),
+				PaddingBottom = UDim.new(0, 1),
+			},
+			New "Frame" {
+				Name = "BorderBottomPadding",
+				LayoutOrder = 10^5,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 0),
+			},
+			
+			BoxBorder {
+				Color = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.Border), "Spring", 40),
+
+				[Children] = New "Frame" {
+					Name = "CollapsibleSectionHeader",
+					LayoutOrder = 0,
+					Active = true,
+					Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
+					BackgroundColor3 = getMotionState(themeProvider:GetColor(Enum.StudioStyleGuideColor.HeaderSection, modifier), "Spring", 40),
+
+					[OnEvent "InputBegan"] = function(inputObject)
+						if not unwrap(isEnabled) then
+							return
+						elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+							isHovering:set(true)
+						elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+							shouldBeCollapsed:set(not shouldBeCollapsed:get())
+						end
+					end,
+					[OnEvent "InputEnded"] = function(inputObject)
+						if not unwrap(isEnabled) then
+							return
+						elseif inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+							isHovering:set(false)
+						end
+					end,
+
+					[Children] = {
+						New "ImageLabel" {
+							Name = "Icon",
+							AnchorPoint = Vector2.new(0, 0.5),
+							Position = UDim2.new(0, 7, 0.5, 0),
+							Size = UDim2.fromOffset(10, 10),
+							Image = "rbxassetid://5607705156",
+							ImageColor3 = getMotionState(Computed(function()
+								local baseColor = Color3.fromRGB(170, 170, 170)
+								if unwrap(isEnabled) then
+									return baseColor
+								end
+								local h, s, v = baseColor:ToHSV()
+								return Color3.fromHSV(h, s, math.clamp(v - .2, 0, 1))
+							end), "Spring", 40),
+							ImageRectOffset = Computed(function()
+								return Vector2.new(unwrap(isCollapsed) and 0 or 10, 0)
+							end),
+							ImageRectSize = Vector2.new(10, 10),
+							BackgroundTransparency = 1,
+						},
+						Label {
+							TextColor3 = getMotionState(Computed(function()
+								local currentLabelColor = unwrap(props.TextColor3 or labelColor)
+								local themeModifier = unwrap(themeColorModifier)
+								if unwrap(isEnabled) then
+									return currentLabelColor
+								end
+								local h, s, v = currentLabelColor:ToHSV()
+								return Color3.fromHSV(h, s, math.clamp(v + .3 * themeModifier, 0, 1))
+							end), "Spring", 40),
+							TextXAlignment = Enum.TextXAlignment.Left,
+							Font = themeProvider:GetFont("Bold"),
+							TextSize = constants.TextSize,
+							Text = props.Text or "HeaderText",
+							Size = UDim2.fromScale(1, 1),
+							[Children] = New "UIPadding" {
+								PaddingLeft = UDim.new(0, 24),
+							}
+						}
+					}
+				}
+			},
+			props[Children],
+		}
+	})(stripProps(props, COMPONENT_ONLY_PROPERTIES))
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="47">
+          <Properties>
+            <string name="Name">VerticalExpandingList</string>
+            <string name="Source">-- Roact version by @sircfenner
+-- Ported to Fusion by @YasuYoshida
+
+local Plugin = script:FindFirstAncestorWhichIsA("Plugin")
+local Fusion = require(Plugin:FindFirstChild("Fusion", true))
+
+local StudioComponents = script.Parent
+local StudioComponentsUtil = StudioComponents:FindFirstChild("Util")
+
+local Background = require(StudioComponents.Background)
+local BoxBorder = require(StudioComponents.BoxBorder)
+
+local getMotionState = require(StudioComponentsUtil.getMotionState)
+local stripProps = require(StudioComponentsUtil.stripProps)
+local unwrap = require(StudioComponentsUtil.unwrap)
+local types = require(StudioComponentsUtil.types)
+
+local Children = Fusion.Children
+local Computed = Fusion.Computed
+local Hydrate = Fusion.Hydrate
+local New = Fusion.New
+local Value = Fusion.Value
+local Out = Fusion.Out
+
+local COMPONENT_ONLY_PROPERTIES = {
+	"Padding",
+	"AutomaticSize",
+}
+
+type VerticalExpandingListProperties = {
+	Padding: (UDim | types.StateObject&lt;UDim>)?,
+	[any]: any,
+}
+
+return function(props: VerticalExpandingListProperties): Frame
+	local hydrateProps = stripProps(props, COMPONENT_ONLY_PROPERTIES)
+
+	local contentSize = Value(Vector2.new(0,0))
+
+	return Hydrate(
+		BoxBorder {
+			[Children] = Background {
+				ClipsDescendants = true,
+				Size = getMotionState(Computed(function()
+					local mode = unwrap(props.AutomaticSize or Enum.AutomaticSize.Y) -- Custom autosize since engine sizing is unreliable
+					if mode == Enum.AutomaticSize.Y then
+						local s = unwrap(contentSize)
+						if s then
+							return UDim2.new(1,0,0,s.Y)
+						else
+							return UDim2.new(1,0,0,0)
+						end
+					else
+						return props.Size or UDim2.new(1,0,0,0)
+					end
+				end), "Spring", 40),
+
+				[Children] = New "UIListLayout" {
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					FillDirection = Enum.FillDirection.Vertical,
+					Padding = Computed(function()
+						return unwrap(props.Padding) or UDim.new(0, 10)
+					end),
+					[Out "AbsoluteContentSize"] = contentSize,
+				}
+			}
+		}
+	)(hydrateProps)
+end</string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="48">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Script" referent="49">
+      <Properties>
+        <string name="Name">Server</string>
+        <string name="Source">print("Hello world, from server!")</string>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="SoundService" referent="50">
+    <Properties>
+      <string name="Name">SoundService</string>
+      <bool name="RespectFilteringEnabled">true</bool>
+    </Properties>
+  </Item>
+  <Item class="StarterPlayer" referent="51">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="52">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="53">
+        <Properties>
+          <string name="Name">Client</string>
+          <string name="Source">print("Hello world, from client!")</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="54">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <bool name="FilteringEnabled">true</bool>
+    </Properties>
+    <Item class="Part" referent="55">
+      <Properties>
+        <string name="Name">Baseplate</string>
+        <bool name="Anchored">true</bool>
+        <Color3uint8 name="Color3uint8">6512483</Color3uint8>
+        <bool name="Locked">true</bool>
+        <Vector3 name="Position">
+          <X>0</X>
+          <Y>-10</Y>
+          <Z>0</Z>
+        </Vector3>
+        <Vector3 name="size">
+          <X>512</X>
+          <Y>20</Y>
+          <Z>512</Z>
+        </Vector3>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>
